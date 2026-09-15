@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars (gitignored) or pass via -var / TF_VAR_* in CI.
+location           = "southeastasia"
+resource_group     = "rg-assurance-test-prod"
+web_instance_count = 2
+api_instance_count = 2
+vm_sku             = "Standard_D2s_v5"
+db_sku             = "GP_Standard_D2ds_v4"
+
+# Required: the SSH public key for VMSS admin (non-sensitive).
+# ssh_public_key   = "ssh-ed25519 AAAA... astst-vmss"
+
+# Set per deploy to the built image tags (git SHA). Defaults to "bootstrap".
+# web_image_tag    = "abc123def456"
+# api_image_tag    = "abc123def456"
