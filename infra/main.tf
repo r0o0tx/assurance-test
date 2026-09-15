@@ -116,3 +116,20 @@ module "observability" {
   key_vault_id          = module.security.key_vault_id
   acr_id                = module.registry.acr_id
 }
+
+module "backup" {
+  source                = "./modules/backup"
+  rg                    = local.rg
+  location              = local.location
+  tags                  = local.tags
+  short_prefix          = var.short_prefix
+  suffix                = local.suffix
+  jobs_subnet_id        = module.network.jobs_subnet_id
+  identity_id           = module.security.identity_id
+  identity_principal_id = module.security.identity_principal_id
+  acr_login_server      = module.registry.login_server
+  key_vault_name        = module.security.key_vault_name
+
+  # Needs DB secrets in Key Vault (data) to back up.
+  depends_on = [module.data]
+}

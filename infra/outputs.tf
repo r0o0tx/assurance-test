@@ -47,3 +47,7 @@ output "frontdoor_hostname" {
 output "law_id" {
   value = module.observability.law_id
 }
+
+output "backup_sa" {
+  value = module.backup.backup_sa
+}
