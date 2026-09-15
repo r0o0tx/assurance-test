@@ -21,6 +21,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Liveness probe: no downstream call, used by LB/Front Door/VMSS health.
+app.get('/health', function(req, res) {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use('/', routes);
 
 // catch 404 and forward to error handler
