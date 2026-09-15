@@ -21,3 +21,11 @@ locals {
 
 # Module blocks are wired in as each module lands:
 #   network -> security -> registry -> data -> compute -> edge -> observability -> backup
+
+module "network" {
+  source       = "./modules/network"
+  rg           = local.rg
+  location     = local.location
+  tags         = local.tags
+  short_prefix = var.short_prefix
+}
