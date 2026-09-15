@@ -38,3 +38,13 @@ module "security" {
   short_prefix = var.short_prefix
   suffix       = local.suffix
 }
+
+module "registry" {
+  source            = "./modules/registry"
+  rg                = local.rg
+  location          = local.location
+  tags              = local.tags
+  short_prefix      = var.short_prefix
+  suffix            = local.suffix
+  vmss_principal_id = module.security.identity_principal_id
+}

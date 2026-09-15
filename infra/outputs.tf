@@ -7,3 +7,15 @@ output "resource_group" {
 output "location" {
   value = local.location
 }
+
+output "acr_login_server" {
+  value = module.registry.login_server
+}
+
+output "acr_name" {
+  value = module.registry.acr_name
+}
+
+output "key_vault_name" {
+  value = module.security.key_vault_name
+}
