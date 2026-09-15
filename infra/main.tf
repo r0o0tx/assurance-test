@@ -29,3 +29,12 @@ module "network" {
   tags         = local.tags
   short_prefix = var.short_prefix
 }
+
+module "security" {
+  source       = "./modules/security"
+  rg           = local.rg
+  location     = local.location
+  tags         = local.tags
+  short_prefix = var.short_prefix
+  suffix       = local.suffix
+}
