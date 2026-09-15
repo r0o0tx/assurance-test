@@ -48,3 +48,19 @@ module "registry" {
   suffix            = local.suffix
   vmss_principal_id = module.security.identity_principal_id
 }
+
+module "data" {
+  source              = "./modules/data"
+  rg                  = local.rg
+  location            = local.location
+  tags                = local.tags
+  short_prefix        = var.short_prefix
+  suffix              = local.suffix
+  db_sku              = var.db_sku
+  db_subnet_id        = module.network.db_subnet_id
+  private_dns_zone_id = module.network.pg_dns_zone_id
+  key_vault_id        = module.security.key_vault_id
+
+  # Wait for the private DNS zone link (network) and KV RBAC propagation (security).
+  depends_on = [module.network, module.security]
+}

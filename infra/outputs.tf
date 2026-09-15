@@ -19,3 +19,11 @@ output "acr_name" {
 output "key_vault_name" {
   value = module.security.key_vault_name
 }
+
+output "db_server_name" {
+  value = module.data.db_server_name
+}
+
+output "db_fqdn" {
+  value = module.data.db_fqdn
+}
