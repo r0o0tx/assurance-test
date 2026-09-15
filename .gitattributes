@@ -1,0 +1,14 @@
+# Force LF for everything that runs on Linux (CI runners, cloud-init, ACI, containers).
+# Prevents Windows CRLF from breaking shebangs and shell parsing.
+* text=auto eol=lf
+*.sh    text eol=lf
+*.tftpl text eol=lf
+*.tf    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+Dockerfile text eol=lf
+*.png   binary
+*.gif   binary
+*.ico   binary
