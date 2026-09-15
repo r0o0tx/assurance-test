@@ -11,6 +11,11 @@ const conString = {
     port: process.env.DBPORT                
 };
 
+// Liveness probe: no downstream dependency, used by LB/Front Door/VMSS health.
+app.get('/health', function(req, res) {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Routes
 app.get('/api/status', function(req, res) {
 //'SELECT now() as time', [], function(err, result
@@ -28,7 +33,7 @@ app.get('/api/status', function(req, res) {
       console.log(err);
       return console.error('Error executing query', err.stack)
     }
-    res.status(200).send(result.rows);
+    res.status(200).send(result.rows.map(function(r){ return { time: r.time, request_uuid: uuid.v4() }; }));
   });
 });
 
