@@ -64,3 +64,28 @@ module "data" {
   # Wait for the private DNS zone link (network) and KV RBAC propagation (security).
   depends_on = [module.network, module.security]
 }
+
+module "compute" {
+  source             = "./modules/compute"
+  rg                 = local.rg
+  location           = local.location
+  tags               = local.tags
+  short_prefix       = var.short_prefix
+  suffix             = local.suffix
+  vm_sku             = var.vm_sku
+  ssh_public_key     = var.ssh_public_key
+  identity_id        = module.security.identity_id
+  identity_client_id = module.security.identity_client_id
+  acr_login_server   = module.registry.login_server
+  acr_name           = module.registry.acr_name
+  key_vault_name     = module.security.key_vault_name
+  web_subnet_id      = module.network.web_subnet_id
+  api_subnet_id      = module.network.api_subnet_id
+  web_instance_count = var.web_instance_count
+  api_instance_count = var.api_instance_count
+  web_image_tag      = var.web_image_tag
+  api_image_tag      = var.api_image_tag
+
+  # DB secrets must exist in Key Vault before instances boot and read them.
+  depends_on = [module.data]
+}

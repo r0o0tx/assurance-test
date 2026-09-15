@@ -27,3 +27,15 @@ output "db_server_name" {
 output "db_fqdn" {
   value = module.data.db_fqdn
 }
+
+output "web_public_fqdn" {
+  value = module.compute.web_public_fqdn
+}
+
+output "api_public_fqdn" {
+  value = module.compute.api_public_fqdn
+}
+
+output "api_internal_ip" {
+  value = module.compute.api_internal_ip
+}

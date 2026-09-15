@@ -1,0 +1,21 @@
+#cloud-config
+package_update: true
+packages: [docker.io, jq, curl, rsyslog]
+runcmd:
+  - systemctl enable --now rsyslog
+  - systemctl enable --now docker
+  # authenticate with the attached user-assigned managed identity (no stored creds)
+  - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+  - az login --identity --username ${identity_client_id}
+  - az acr login --name ${acr_name}
+  # build the tier env file from Key Vault secrets (read via the same identity)
+  - |
+    ENVFILE=/etc/${tier}.env
+    echo "PORT=3000" > $ENVFILE
+    %{ for secret in secret_names ~}
+    echo "${secret}=$(az keyvault secret show --vault-name ${key_vault_name} --name ${secret} --query value -o tsv)" >> $ENVFILE
+    %{ endfor ~}
+    ${extra_env}
+  # run the tier container; logs go to syslog for off-host collection
+  - docker rm -f ${tier} || true
+  - docker run -d --restart always --name ${tier} --log-driver=syslog --log-opt tag=${tier} -p 3000:3000 --env-file /etc/${tier}.env ${acr_login_server}/${tier}:${image_tag}
