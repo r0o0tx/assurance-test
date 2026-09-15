@@ -99,3 +99,20 @@ module "edge" {
   web_origin_host = module.compute.web_public_fqdn
   api_origin_host = module.compute.api_public_fqdn
 }
+
+module "observability" {
+  source                = "./modules/observability"
+  rg                    = local.rg
+  location              = local.location
+  tags                  = local.tags
+  short_prefix          = var.short_prefix
+  identity_principal_id = module.security.identity_principal_id
+  web_vmss_id           = module.compute.web_vmss_id
+  api_vmss_id           = module.compute.api_vmss_id
+  web_lb_id             = module.compute.web_lb_id
+  api_lb_id             = module.compute.api_lb_id
+  frontdoor_profile_id  = module.edge.frontdoor_profile_id
+  db_id                 = module.data.db_id
+  key_vault_id          = module.security.key_vault_id
+  acr_id                = module.registry.acr_id
+}

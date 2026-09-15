@@ -1,0 +1,76 @@
+{
+  "lenses": {
+    "0": {
+      "order": 0,
+      "parts": {
+        "0": {
+          "position": { "x": 0, "y": 0, "colSpan": 6, "rowSpan": 4 },
+          "metadata": {
+            "type": "Extension/HubsExtension/PartType/MonitorChartPart",
+            "inputs": [
+              {
+                "name": "options",
+                "value": {
+                  "chart": {
+                    "metrics": [
+                      { "resourceMetadata": { "id": "${fd_id}" }, "name": "RequestCount", "aggregationType": 1, "namespace": "microsoft.cdn/profiles", "metricVisualization": { "displayName": "Requests" } },
+                      { "resourceMetadata": { "id": "${fd_id}" }, "name": "TotalLatency", "aggregationType": 4, "namespace": "microsoft.cdn/profiles", "metricVisualization": { "displayName": "Total Latency" } }
+                    ],
+                    "title": "Front Door: requests and latency",
+                    "titleKind": 1,
+                    "visualization": { "chartType": 2 }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "1": {
+          "position": { "x": 6, "y": 0, "colSpan": 6, "rowSpan": 4 },
+          "metadata": {
+            "type": "Extension/HubsExtension/PartType/MonitorChartPart",
+            "inputs": [
+              {
+                "name": "options",
+                "value": {
+                  "chart": {
+                    "metrics": [
+                      { "resourceMetadata": { "id": "${web_vmss_id}" }, "name": "Percentage CPU", "aggregationType": 4, "namespace": "microsoft.compute/virtualmachinescalesets", "metricVisualization": { "displayName": "web CPU %" } },
+                      { "resourceMetadata": { "id": "${api_vmss_id}" }, "name": "Percentage CPU", "aggregationType": 4, "namespace": "microsoft.compute/virtualmachinescalesets", "metricVisualization": { "displayName": "api CPU %" } }
+                    ],
+                    "title": "Scale set CPU (web + api)",
+                    "titleKind": 1,
+                    "visualization": { "chartType": 2 }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "2": {
+          "position": { "x": 0, "y": 4, "colSpan": 6, "rowSpan": 4 },
+          "metadata": {
+            "type": "Extension/HubsExtension/PartType/MonitorChartPart",
+            "inputs": [
+              {
+                "name": "options",
+                "value": {
+                  "chart": {
+                    "metrics": [
+                      { "resourceMetadata": { "id": "${db_id}" }, "name": "cpu_percent", "aggregationType": 4, "namespace": "microsoft.dbforpostgresql/flexibleservers", "metricVisualization": { "displayName": "DB CPU %" } },
+                      { "resourceMetadata": { "id": "${db_id}" }, "name": "active_connections", "aggregationType": 4, "namespace": "microsoft.dbforpostgresql/flexibleservers", "metricVisualization": { "displayName": "DB connections" } }
+                    ],
+                    "title": "Database load",
+                    "titleKind": 1,
+                    "visualization": { "chartType": 2 }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "metadata": { "model": {} }
+}

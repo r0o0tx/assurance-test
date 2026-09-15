@@ -116,6 +116,22 @@ resource "azurerm_linux_virtual_machine_scale_set" "web" {
     settings                  = jsonencode({ protocol = "http", port = 3000, requestPath = "/health" })
   }
 
+  extension {
+    name                      = "ama"
+    publisher                 = "Microsoft.Azure.Monitor"
+    type                      = "AzureMonitorLinuxAgent"
+    type_handler_version      = "1.29"
+    automatic_upgrade_enabled = true
+    settings = jsonencode({
+      authentication = {
+        managedIdentity = {
+          "identifier-name"  = "mi_res_id"
+          "identifier-value" = var.identity_id
+        }
+      }
+    })
+  }
+
   automatic_instance_repair {
     enabled      = true
     grace_period = "PT10M"

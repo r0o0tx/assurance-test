@@ -33,3 +33,11 @@ output "web_vmss_name" {
 output "api_vmss_name" {
   value = azurerm_linux_virtual_machine_scale_set.api.name
 }
+
+output "web_lb_id" {
+  value = azurerm_lb.web.id
+}
+
+output "api_lb_id" {
+  value = azurerm_lb.api.id
+}

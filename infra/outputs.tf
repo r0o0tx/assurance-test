@@ -43,3 +43,7 @@ output "api_internal_ip" {
 output "frontdoor_hostname" {
   value = module.edge.frontdoor_hostname
 }
+
+output "law_id" {
+  value = module.observability.law_id
+}
