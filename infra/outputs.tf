@@ -39,3 +39,7 @@ output "api_public_fqdn" {
 output "api_internal_ip" {
   value = module.compute.api_internal_ip
 }
+
+output "frontdoor_hostname" {
+  value = module.edge.frontdoor_hostname
+}

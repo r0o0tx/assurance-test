@@ -89,3 +89,13 @@ module "compute" {
   # DB secrets must exist in Key Vault before instances boot and read them.
   depends_on = [module.data]
 }
+
+module "edge" {
+  source          = "./modules/edge"
+  rg              = local.rg
+  tags            = local.tags
+  short_prefix    = var.short_prefix
+  suffix          = local.suffix
+  web_origin_host = module.compute.web_public_fqdn
+  api_origin_host = module.compute.api_public_fqdn
+}
