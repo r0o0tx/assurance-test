@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: appdb
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+  api:
+    build: ./api
+    environment:
+      PORT: "3000"
+      DB: appdb
+      DBUSER: appuser
+      DBPASS: devpass
+      DBHOST: db
+      DBPORT: "5432"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["3001:3000"]
+  web:
+    build: ./web
+    environment:
+      PORT: "3000"
+      API_HOST: http://api:3000
+    depends_on:
+      api:
+        condition: service_started
+    ports: ["3000:3000"]
