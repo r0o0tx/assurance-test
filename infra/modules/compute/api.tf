@@ -1,4 +1,4 @@
-# -------- API load balancer: public frontend (Front Door origin) + private (east-west) --------
+# -------- API public load balancer (Front Door origin) --------
 resource "azurerm_public_ip" "api" {
   name                = "${var.short_prefix}-api-pip"
   resource_group_name = var.rg
@@ -10,7 +10,7 @@ resource "azurerm_public_ip" "api" {
   tags                = var.tags
 }
 
-resource "azurerm_lb" "api" {
+resource "azurerm_lb" "api_public" {
   name                = "${var.short_prefix}-api-lb"
   resource_group_name = var.rg
   location            = var.location
@@ -21,6 +21,41 @@ resource "azurerm_lb" "api" {
     name                 = "public"
     public_ip_address_id = azurerm_public_ip.api.id
   }
+}
+
+resource "azurerm_lb_backend_address_pool" "api_public" {
+  name            = "bepool-api-pub"
+  loadbalancer_id = azurerm_lb.api_public.id
+}
+
+resource "azurerm_lb_probe" "api_public" {
+  name                = "probe-api-pub"
+  loadbalancer_id     = azurerm_lb.api_public.id
+  protocol            = "Http"
+  port                = var.app_port
+  request_path        = "/health"
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+resource "azurerm_lb_rule" "api_public" {
+  name                           = "rule-api-public"
+  loadbalancer_id                = azurerm_lb.api_public.id
+  frontend_ip_configuration_name = "public"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = var.app_port
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api_public.id]
+  probe_id                       = azurerm_lb_probe.api_public.id
+}
+
+# -------- API internal load balancer (east-west: web -> api) --------
+resource "azurerm_lb" "api_internal" {
+  name                = "${var.short_prefix}-api-int-lb"
+  resource_group_name = var.rg
+  location            = var.location
+  sku                 = "Standard"
+  tags                = var.tags
 
   frontend_ip_configuration {
     name                          = "internal"
@@ -31,14 +66,14 @@ resource "azurerm_lb" "api" {
   }
 }
 
-resource "azurerm_lb_backend_address_pool" "api" {
-  name            = "bepool-api"
-  loadbalancer_id = azurerm_lb.api.id
+resource "azurerm_lb_backend_address_pool" "api_internal" {
+  name            = "bepool-api-int"
+  loadbalancer_id = azurerm_lb.api_internal.id
 }
 
-resource "azurerm_lb_probe" "api" {
-  name                = "probe-api"
-  loadbalancer_id     = azurerm_lb.api.id
+resource "azurerm_lb_probe" "api_internal" {
+  name                = "probe-api-int"
+  loadbalancer_id     = azurerm_lb.api_internal.id
   protocol            = "Http"
   port                = var.app_port
   request_path        = "/health"
@@ -46,29 +81,18 @@ resource "azurerm_lb_probe" "api" {
   number_of_probes    = 2
 }
 
-resource "azurerm_lb_rule" "api_public" {
-  name                           = "rule-api-public"
-  loadbalancer_id                = azurerm_lb.api.id
-  frontend_ip_configuration_name = "public"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = var.app_port
-  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api.id]
-  probe_id                       = azurerm_lb_probe.api.id
-}
-
 resource "azurerm_lb_rule" "api_internal" {
   name                           = "rule-api-internal"
-  loadbalancer_id                = azurerm_lb.api.id
+  loadbalancer_id                = azurerm_lb.api_internal.id
   frontend_ip_configuration_name = "internal"
   protocol                       = "Tcp"
   frontend_port                  = var.app_port
   backend_port                   = var.app_port
-  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api.id]
-  probe_id                       = azurerm_lb_probe.api.id
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api_internal.id]
+  probe_id                       = azurerm_lb_probe.api_internal.id
 }
 
-# -------- API scale set --------
+# -------- API scale set (health via Application Health Extension) --------
 resource "azurerm_linux_virtual_machine_scale_set" "api" {
   name                            = "${var.short_prefix}-api-vmss"
   resource_group_name             = var.rg
@@ -79,7 +103,6 @@ resource "azurerm_linux_virtual_machine_scale_set" "api" {
   zone_balance                    = true
   admin_username                  = "azureuser"
   upgrade_mode                    = "Rolling"
-  health_probe_id                 = azurerm_lb_probe.api.id
   disable_password_authentication = true
 
   custom_data = base64encode(templatefile("${path.module}/cloud-init.tftpl", {
@@ -107,10 +130,13 @@ resource "azurerm_linux_virtual_machine_scale_set" "api" {
     name    = "nic-api"
     primary = true
     ip_configuration {
-      name                                   = "ipcfg"
-      primary                                = true
-      subnet_id                              = var.api_subnet_id
-      load_balancer_backend_address_pool_ids = [azurerm_lb_backend_address_pool.api.id]
+      name      = "ipcfg"
+      primary   = true
+      subnet_id = var.api_subnet_id
+      load_balancer_backend_address_pool_ids = [
+        azurerm_lb_backend_address_pool.api_public.id,
+        azurerm_lb_backend_address_pool.api_internal.id,
+      ]
     }
   }
 

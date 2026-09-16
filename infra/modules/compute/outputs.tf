@@ -38,6 +38,10 @@ output "web_lb_id" {
   value = azurerm_lb.web.id
 }
 
-output "api_lb_id" {
-  value = azurerm_lb.api.id
+output "api_public_lb_id" {
+  value = azurerm_lb.api_public.id
+}
+
+output "api_internal_lb_id" {
+  value = azurerm_lb.api_internal.id
 }

@@ -110,7 +110,7 @@ module "observability" {
   web_vmss_id           = module.compute.web_vmss_id
   api_vmss_id           = module.compute.api_vmss_id
   web_lb_id             = module.compute.web_lb_id
-  api_lb_id             = module.compute.api_lb_id
+  api_lb_id             = module.compute.api_public_lb_id
   frontdoor_profile_id  = module.edge.frontdoor_profile_id
   db_id                 = module.data.db_id
   key_vault_id          = module.security.key_vault_id

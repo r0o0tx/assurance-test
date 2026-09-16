@@ -60,7 +60,6 @@ resource "azurerm_linux_virtual_machine_scale_set" "web" {
   zone_balance                    = true
   admin_username                  = "azureuser"
   upgrade_mode                    = "Rolling"
-  health_probe_id                 = azurerm_lb_probe.web.id
   disable_password_authentication = true
 
   custom_data = base64encode(templatefile("${path.module}/cloud-init.tftpl", {
