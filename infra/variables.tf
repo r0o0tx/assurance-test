@@ -40,7 +40,7 @@ variable "api_instance_count" {
 
 variable "vm_sku" {
   type    = string
-  default = "Standard_D2s_v5"
+  default = "Standard_B2s"
 }
 
 variable "db_sku" {
