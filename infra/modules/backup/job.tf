@@ -28,8 +28,9 @@ resource "azurerm_container_group" "backup" {
     commands = ["/bin/bash", "-c", "while true; do /usr/local/bin/pg_backup.sh || true; sleep 86400; done"]
 
     environment_variables = {
-      KV_NAME   = var.key_vault_name
-      BACKUP_SA = azurerm_storage_account.backup.name
+      KV_NAME            = var.key_vault_name
+      BACKUP_SA          = azurerm_storage_account.backup.name
+      IDENTITY_CLIENT_ID = var.identity_client_id
     }
 
     ports {

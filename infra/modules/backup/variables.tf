@@ -26,6 +26,10 @@ variable "identity_id" {
   type = string
 }
 
+variable "identity_client_id" {
+  type = string
+}
+
 variable "identity_principal_id" {
   type = string
 }

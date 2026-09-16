@@ -126,6 +126,7 @@ module "backup" {
   suffix                = local.suffix
   jobs_subnet_id        = module.network.jobs_subnet_id
   identity_id           = module.security.identity_id
+  identity_client_id    = module.security.identity_client_id
   identity_principal_id = module.security.identity_principal_id
   acr_login_server      = module.registry.login_server
   key_vault_name        = module.security.key_vault_name

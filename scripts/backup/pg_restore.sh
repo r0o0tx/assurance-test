@@ -5,7 +5,7 @@ set -euo pipefail
 
 BLOB="${1:?usage: pg_restore.sh <blob-name>}"
 
-az login --identity >/dev/null
+az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none
 
 DBHOST=$(az keyvault secret show --vault-name "$KV_NAME" --name DBHOST --query value -o tsv)
 DB=$(az keyvault secret show --vault-name "$KV_NAME" --name DB --query value -o tsv)

@@ -4,7 +4,7 @@
 # nothing sensitive is passed in the environment.
 set -euo pipefail
 
-az login --identity >/dev/null
+az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none
 
 DBHOST=$(az keyvault secret show --vault-name "$KV_NAME" --name DBHOST --query value -o tsv)
 DB=$(az keyvault secret show --vault-name "$KV_NAME" --name DB --query value -o tsv)
