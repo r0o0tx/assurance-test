@@ -175,6 +175,20 @@ resource "azurerm_network_security_group" "db" {
     destination_address_prefix = "*"
   }
 
+  # Flexible Server zone-redundant HA replicates between primary and standby within
+  # the delegated subnet; this traffic must be allowed on 5432.
+  security_rule {
+    name                       = "allow-intra-db-postgres"
+    priority                   = 90
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "5432"
+    source_address_prefix      = var.db_subnet_cidr
+    destination_address_prefix = "*"
+  }
+
   security_rule {
     name                       = "deny-all-in"
     priority                   = 4000
