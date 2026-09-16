@@ -37,14 +37,24 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Build and push tier images
+      - name: Build tier images
         run: |
           set -euo pipefail
           SHA="${GITHUB_SHA::12}"
           ACR_NAME=$(az acr list -g "${{ vars.STATE_RG }}" --query "[?starts_with(name,'aststacr')].name | [0]" -o tsv)
-          az acr login --name "$ACR_NAME"
           ACR="$ACR_NAME.azurecr.io"
-          for t in web api; do
-            docker build -t "$ACR/$t:$SHA" "app/$t"
-            docker push "$ACR/$t:$SHA"
-          done
+          echo "ACR_NAME=$ACR_NAME" >> "$GITHUB_ENV"
+          echo "ACR=$ACR" >> "$GITHUB_ENV"
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+          for t in web api; do docker build -t "$ACR/$t:$SHA" "app/$t"; done
+      - name: Scan images (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR }}/api:${{ env.SHA }}
+          severity: HIGH,CRITICAL
+          exit-code: "0" # report; gate by policy when ready
+      - name: Push images
+        run: |
+          set -euo pipefail
+          az acr login --name "$ACR_NAME"
+          for t in web api; do docker push "$ACR/$t:$SHA"; done
