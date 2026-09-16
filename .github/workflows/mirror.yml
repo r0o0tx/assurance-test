@@ -1,0 +1,17 @@
+name: mirror
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to delivery mirror
+        env:
+          MIRROR_REMOTE: ${{ secrets.MIRROR_REMOTE }}
+        run: git push "$MIRROR_REMOTE" HEAD:main --force
