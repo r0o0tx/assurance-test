@@ -1,0 +1,28 @@
+# Overridden by Terraform at deploy time (image registry, tags, DB connection).
+registry: ""
+webTag: "bootstrap"
+apiTag: "bootstrap"
+
+replicas: 2
+port: 3000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscale:
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+# api database connection (filled from Terraform, values are sensitive)
+db:
+  host: ""
+  name: "appdb"
+  user: "appadmin"
+  password: ""
+  port: "5432"

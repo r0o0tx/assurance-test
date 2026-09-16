@@ -179,7 +179,7 @@ resource "azurerm_network_security_group" "db" {
   # the delegated subnet; this traffic must be allowed on 5432.
   security_rule {
     name                       = "allow-intra-db-postgres"
-    priority                   = 90
+    priority                   = 110
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
