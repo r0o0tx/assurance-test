@@ -7,7 +7,7 @@ set -euo pipefail
 LOCATION="${LOCATION:-eastus}"
 RG="${RG:-rg-assurance-test-prod}"
 PREFIX="${PREFIX:-asttstate}"
-SUFFIX="$(tr -dc 'a-z0-9' </dev/urandom | head -c6)"
+SUFFIX="$(openssl rand -hex 3)"
 SA="${PREFIX}${SUFFIX}"
 CONTAINER="tfstate"
 
