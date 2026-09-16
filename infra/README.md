@@ -13,7 +13,7 @@ and are not managed by Terraform (so `terraform destroy` never removes state).
 ## One-time bootstrap (creates the resource group + state storage)
 
 ```bash
-LOCATION=southeastasia bash ../scripts/bootstrap/create-state.sh
+LOCATION=eastus bash ../scripts/bootstrap/create-state.sh
 # note the printed STATE_STORAGE_ACCOUNT
 ```
 

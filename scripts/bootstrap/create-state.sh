@@ -4,7 +4,7 @@
 # removes the state behind it. Run once, then record the printed values.
 set -euo pipefail
 
-LOCATION="${LOCATION:-southeastasia}"
+LOCATION="${LOCATION:-eastus}"
 RG="${RG:-rg-assurance-test-prod}"
 PREFIX="${PREFIX:-asttstate}"
 SUFFIX="$(tr -dc 'a-z0-9' </dev/urandom | head -c6)"
@@ -17,6 +17,13 @@ az group create --name "$RG" --location "$LOCATION" \
 az storage account create --name "$SA" --resource-group "$RG" \
   --location "$LOCATION" --sku Standard_LRS --kind StorageV2 \
   --min-tls-version TLS1_2 --allow-blob-public-access false
+
+# Versioning + soft delete so shared team state has history and is recoverable.
+az storage account blob-service-properties update \
+  --account-name "$SA" --resource-group "$RG" \
+  --enable-versioning true \
+  --enable-delete-retention true --delete-retention-days 14 \
+  --enable-container-delete-retention true --container-delete-retention-days 14
 
 # Let the current signed-in user use AAD auth against the state container
 # (the Terraform azurerm backend is configured with use_azuread_auth).
