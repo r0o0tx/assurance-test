@@ -6,7 +6,7 @@ runcmd:
   - systemctl enable --now docker
   # authenticate with the attached user-assigned managed identity (no stored creds)
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-  - az login --identity --username ${identity_client_id}
+  - az login --identity --client-id ${identity_client_id}
   - az acr login --name ${acr_name}
   # build the tier env file from Key Vault secrets (read via the same identity)
   - |

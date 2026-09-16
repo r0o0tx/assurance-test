@@ -4,15 +4,24 @@
 set -euo pipefail
 
 FD="${1:?usage: smoke-test.sh <frontdoor-hostname>}"
-RETRY="--retry 20 --retry-delay 3 --retry-all-errors --retry-connrefused"
+RETRY=(--retry 20 --retry-delay 3 --retry-all-errors --retry-connrefused)
 
-echo -n "web /health   : "
-curl -fsS $RETRY "https://$FD/health" && echo
+fail() {
+  echo "SMOKE FAIL: $1"
+  exit 1
+}
+
+echo -n "web /health    : "
+curl -fsS "${RETRY[@]}" "https://$FD/health" || fail "web /health unreachable"
+echo
 
 echo -n "api /api/status: "
-curl -fsS $RETRY "https://$FD/api/status" | grep -q '"time"' && echo "ok (db reachable)"
+status=$(curl -fsS "${RETRY[@]}" "https://$FD/api/status") || fail "api /api/status unreachable"
+echo "$status" | grep -q '"time"' || fail "api /api/status did not return a db time"
+echo "ok (db reachable)"
 
-echo -n "web render    : "
-curl -fsS "https://$FD/" | grep -qi "3tier App" && echo "ok"
+echo -n "web render     : "
+curl -fsS "https://$FD/" | grep -qi "3tier App" || fail "web did not render"
+echo "ok"
 
 echo "smoke test passed"
