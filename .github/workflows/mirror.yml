@@ -6,6 +6,8 @@ on:
 
 jobs:
   mirror:
+    # Enabled only once the delivery mirror is configured (repo variable + secret).
+    if: ${{ vars.MIRROR_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
