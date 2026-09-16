@@ -10,20 +10,27 @@ GH_REPO="${GH_REPO:-assurance-test}"
 SUB_ID="$(az account show --query id -o tsv)"
 TENANT_ID="$(az account show --query tenantId -o tsv)"
 
+# Subject prefix. GitHub may issue an immutable subject that embeds numeric org/repo
+# IDs (repo:owner@<orgid>/repo@<repoid>). If so, pass the exact prefix, e.g.:
+#   SUB_PREFIX='repo:owner@123/repo@456' bash setup-oidc.sh
+# Check the current value with:
+#   gh api repos/$GH_ORG/$GH_REPO/actions/oidc/customization/sub
+SUB_PREFIX="${SUB_PREFIX:-repo:${GH_ORG}/${GH_REPO}}"
+
 APP_ID="$(az ad app create --display-name "$APP_NAME" --query appId -o tsv)"
 az ad sp create --id "$APP_ID" >/dev/null
 
 az ad app federated-credential create --id "$APP_ID" --parameters "{
   \"name\": \"gh-main\",
   \"issuer\": \"https://token.actions.githubusercontent.com\",
-  \"subject\": \"repo:${GH_ORG}/${GH_REPO}:ref:refs/heads/main\",
+  \"subject\": \"${SUB_PREFIX}:ref:refs/heads/main\",
   \"audiences\": [\"api://AzureADTokenExchange\"]
 }"
 
 az ad app federated-credential create --id "$APP_ID" --parameters "{
   \"name\": \"gh-env-prod\",
   \"issuer\": \"https://token.actions.githubusercontent.com\",
-  \"subject\": \"repo:${GH_ORG}/${GH_REPO}:environment:prod\",
+  \"subject\": \"${SUB_PREFIX}:environment:prod\",
   \"audiences\": [\"api://AzureADTokenExchange\"]
 }"
 
@@ -32,8 +39,9 @@ az ad app federated-credential create --id "$APP_ID" --parameters "{
 #  - User Access Administrator: create the Key Vault / ACR role assignments Terraform defines
 #  - AcrPush: push images from CI
 #  - Storage Blob Data Contributor: AAD auth to the Terraform state container
+#  - Key Vault Secrets Officer: read/manage the DB secrets Terraform maintains
 SCOPE="/subscriptions/${SUB_ID}/resourceGroups/${RG}"
-for ROLE in "Contributor" "User Access Administrator" "AcrPush" "Storage Blob Data Contributor"; do
+for ROLE in "Contributor" "User Access Administrator" "AcrPush" "Storage Blob Data Contributor" "Key Vault Secrets Officer"; do
   az role assignment create --assignee "$APP_ID" --role "$ROLE" --scope "$SCOPE"
 done
 

@@ -28,11 +28,18 @@ resource "azurerm_role_assignment" "vmss_secrets_user" {
   principal_id         = azurerm_user_assigned_identity.vmss.principal_id
 }
 
-# The deployer (local az login / CI identity) can write secrets (DB creds, etc.).
+# The identity that bootstraps the stack can write secrets (DB creds, etc.).
+# Additional runners (e.g. the CI service principal) are granted separately in the
+# OIDC setup. principal_id is ignored on updates so the assignment does not churn
+# when a different identity (local vs CI) runs a later apply.
 resource "azurerm_role_assignment" "deployer_secrets_officer" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
+
+  lifecycle {
+    ignore_changes = [principal_id]
+  }
 }
 
 # RBAC assignments can take up to ~1 minute to propagate to the data plane; wait
