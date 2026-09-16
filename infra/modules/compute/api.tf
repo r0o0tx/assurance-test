@@ -113,7 +113,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "api" {
     identity_client_id = var.identity_client_id
     key_vault_name     = var.key_vault_name
     secret_names       = ["DB", "DBUSER", "DBPASS", "DBHOST", "DBPORT"]
-    extra_env          = ""
+    extra_env          = "echo 'DBSSL=require' >> $ENVFILE"
   }))
 
   admin_ssh_key {

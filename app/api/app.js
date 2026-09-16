@@ -8,7 +8,10 @@ const conString = {
     database: process.env.DB,
     password: process.env.DBPASS,
     host: process.env.DBHOST,
-    port: process.env.DBPORT                
+    port: process.env.DBPORT,
+    // Managed PostgreSQL enforces TLS. Enable it when DBSSL=require; local dev
+    // (no DBSSL) connects without TLS.
+    ssl: process.env.DBSSL === 'require' ? { rejectUnauthorized: false } : false
 };
 
 // Liveness probe: no downstream dependency, used by LB/Front Door/VMSS health.

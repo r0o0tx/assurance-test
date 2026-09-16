@@ -5,7 +5,11 @@ set -euo pipefail
 
 BLOB="${1:?usage: pg_restore.sh <blob-name>}"
 
-az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none
+for i in 1 2 3 4 5; do
+  az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none && break
+  echo "az login attempt $i failed; retrying in 10s"
+  sleep 10
+done
 
 DBHOST=$(az keyvault secret show --vault-name "$KV_NAME" --name DBHOST --query value -o tsv)
 DB=$(az keyvault secret show --vault-name "$KV_NAME" --name DB --query value -o tsv)

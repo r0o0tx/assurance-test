@@ -4,7 +4,12 @@
 # nothing sensitive is passed in the environment.
 set -euo pipefail
 
-az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none
+# Retry: IMDS can be briefly unavailable right after a container (re)start.
+for i in 1 2 3 4 5; do
+  az login --identity --client-id "$IDENTITY_CLIENT_ID" --output none && break
+  echo "az login attempt $i failed; retrying in 10s"
+  sleep 10
+done
 
 DBHOST=$(az keyvault secret show --vault-name "$KV_NAME" --name DBHOST --query value -o tsv)
 DB=$(az keyvault secret show --vault-name "$KV_NAME" --name DB --query value -o tsv)
@@ -16,6 +21,7 @@ TS="$(date -u +%Y%m%dT%H%M%SZ)"
 FILE="/tmp/appdb-${TS}.sql.gz"
 
 export PGPASSWORD="$DBPASS"
+export PGSSLMODE=require
 pg_dump -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d "$DB" | gzip >"$FILE"
 
 az storage blob upload \

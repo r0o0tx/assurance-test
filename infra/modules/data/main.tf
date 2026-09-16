@@ -42,14 +42,11 @@ resource "azurerm_postgresql_flexible_server_database" "app" {
   charset   = "utf8"
 }
 
-# The sample app's pg client does not negotiate TLS, which the server enforces by
-# default. The database is private (VNet-only, no public endpoint), so non-TLS
-# intra-VNet connections are acceptable here. Hardening path: enable SSL in the
-# app's pg config and remove this.
+# TLS is enforced; the api connects with SSL (DBSSL=require in its environment).
 resource "azurerm_postgresql_flexible_server_configuration" "require_secure_transport" {
   name      = "require_secure_transport"
   server_id = azurerm_postgresql_flexible_server.db.id
-  value     = "OFF"
+  value     = "ON"
 }
 
 # Connection facts consumed by the API tier at boot (read via managed identity).

@@ -100,6 +100,30 @@ resource "azurerm_cdn_frontdoor_rule" "bypass_dynamic" {
   }
 }
 
+# Force edge caching of static assets so they return cache HITs regardless of the
+# origin's cache-control (Express serves them with max-age=0).
+resource "azurerm_cdn_frontdoor_rule" "cache_static" {
+  name                      = "cachestatic"
+  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.web.id
+  order                     = 2
+
+  actions {
+    route_configuration_override_action {
+      cache_behavior                = "OverrideAlways"
+      cache_duration                = "1.00:00:00"
+      query_string_caching_behavior = "IgnoreQueryString"
+      compression_enabled           = true
+    }
+  }
+
+  conditions {
+    url_file_extension_condition {
+      operator     = "Equal"
+      match_values = ["css", "js", "gif", "png", "jpg", "jpeg", "svg", "ico", "woff", "woff2"]
+    }
+  }
+}
+
 # -------- Routes: /api/* to api (no cache), /* to web (cache static) --------
 resource "azurerm_cdn_frontdoor_route" "api" {
   name                          = "route-api"
