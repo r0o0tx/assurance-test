@@ -22,6 +22,12 @@ variable "jobs_subnet_id" {
   type = string
 }
 
+variable "deployer_ip_rules" {
+  type        = list(string)
+  default     = []
+  description = "Public IP(s) allowed on the backup storage data plane so the identity running an apply can manage the container. Set to the runner/local IP at deploy time."
+}
+
 variable "identity_id" {
   type = string
 }

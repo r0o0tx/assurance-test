@@ -40,12 +40,19 @@ module "network" {
 }
 
 module "security" {
-  source       = "./modules/security"
-  rg           = local.rg
-  location     = local.location
-  tags         = local.tags
-  short_prefix = var.short_prefix
-  suffix       = local.suffix
+  source                   = "./modules/security"
+  rg                       = local.rg
+  location                 = local.location
+  tags                     = local.tags
+  short_prefix             = var.short_prefix
+  suffix                   = local.suffix
+  web_subnet_id            = module.network.web_subnet_id
+  api_subnet_id            = module.network.api_subnet_id
+  jobs_subnet_id           = module.network.jobs_subnet_id
+  deployer_ip_rules        = var.deployer_ip_rules
+  purge_protection_enabled = var.purge_protection_enabled
+
+  depends_on = [module.network]
 }
 
 module "registry" {
@@ -137,6 +144,7 @@ module "backup" {
   short_prefix          = var.short_prefix
   suffix                = local.suffix
   jobs_subnet_id        = module.network.jobs_subnet_id
+  deployer_ip_rules     = var.deployer_ip_rules
   identity_id           = module.security.identity_id
   identity_client_id    = module.security.identity_client_id
   identity_principal_id = module.security.identity_principal_id

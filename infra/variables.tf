@@ -81,3 +81,15 @@ variable "alert_email" {
   default     = ""
   description = "Operational alert destination. Empty (default) disables the action group and all alert rules; set per environment to enable."
 }
+
+variable "deployer_ip_rules" {
+  type        = list(string)
+  default     = []
+  description = "Public IP(s) of the identity running the apply, allowed on the network-restricted Key Vault and backup storage data planes. CI sets this to the runner IP; set your own IP for a local apply."
+}
+
+variable "purge_protection_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable Key Vault purge protection. Set true in prod/staging; false in dev for easy teardown."
+}

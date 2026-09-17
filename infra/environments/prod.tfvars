@@ -5,4 +5,5 @@ vm_sku                    = "Standard_B2s"
 web_instance_count        = 2
 api_instance_count        = 2
 alert_email               = "platform-alerts@example.com"
+purge_protection_enabled  = true
 # subscription_id         = "<prod-subscription-guid>"   # set for multi-subscription

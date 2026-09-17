@@ -36,6 +36,14 @@ az role assignment create --assignee "$USER_OBJ" \
 az storage container create --name "$CONTAINER" \
   --account-name "$SA" --auth-mode login
 
+# Lock the state data plane down to this caller's IP, then default-deny public
+# access. Do this AFTER the container exists to avoid a network-rule propagation
+# race. CI adds the runner IP the same way at deploy time and removes it after.
+MYIP="$(curl -s ifconfig.me)"
+az storage account network-rule add --account-name "$SA" --resource-group "$RG" --ip-address "$MYIP"
+az storage account update --name "$SA" --resource-group "$RG" \
+  --default-action Deny --bypass AzureServices
+
 echo "STATE_STORAGE_ACCOUNT=$SA"
 echo "STATE_RG=$RG"
 echo "STATE_CONTAINER=$CONTAINER"

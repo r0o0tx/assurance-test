@@ -16,9 +16,20 @@ resource "azurerm_key_vault" "main" {
   tenant_id                  = data.azurerm_client_config.current.tenant_id
   sku_name                   = "standard"
   enable_rbac_authorization  = true
-  purge_protection_enabled   = false
+  purge_protection_enabled   = var.purge_protection_enabled
   soft_delete_retention_days = 7
   tags                       = var.tags
+
+  # Default-deny the data plane. Runtime access comes over VNet service endpoints
+  # (the app + jobs subnets); the identity running an apply is allowed by IP so
+  # secret writes/reads during deploy succeed. ip_rules is set to exactly the
+  # current deployer IP each run (self-cleaning).
+  network_acls {
+    default_action             = "Deny"
+    bypass                     = "AzureServices"
+    virtual_network_subnet_ids = [var.web_subnet_id, var.api_subnet_id, var.jobs_subnet_id]
+    ip_rules                   = var.deployer_ip_rules
+  }
 }
 
 # VMSS identity can read secrets.

@@ -11,6 +11,9 @@ resource "azurerm_subnet" "web" {
   resource_group_name  = var.rg
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [var.web_subnet_cidr]
+  # Reach Key Vault (secret fetch at boot) and Storage over the backbone, not the
+  # public endpoint, so those data planes can default-deny public network access.
+  service_endpoints = ["Microsoft.KeyVault", "Microsoft.Storage"]
 }
 
 resource "azurerm_subnet" "api" {
@@ -18,6 +21,7 @@ resource "azurerm_subnet" "api" {
   resource_group_name  = var.rg
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [var.api_subnet_cidr]
+  service_endpoints    = ["Microsoft.KeyVault", "Microsoft.Storage"]
 }
 
 resource "azurerm_subnet" "db" {
@@ -40,6 +44,8 @@ resource "azurerm_subnet" "jobs" {
   resource_group_name  = var.rg
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [var.jobs_subnet_cidr]
+  # The backup job reads Key Vault and writes backup blobs over the backbone.
+  service_endpoints = ["Microsoft.KeyVault", "Microsoft.Storage"]
 
   delegation {
     name = "aci"
