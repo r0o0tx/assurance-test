@@ -39,16 +39,6 @@ resource "azurerm_subnet" "db" {
   }
 }
 
-# NAT subnet for the Private Link Services that expose the tier load balancers to
-# Front Door privately. Private Link Service requires network policies disabled.
-resource "azurerm_subnet" "pls" {
-  name                                          = "snet-pls"
-  resource_group_name                           = var.rg
-  virtual_network_name                          = azurerm_virtual_network.main.name
-  address_prefixes                              = [var.pls_subnet_cidr]
-  private_link_service_network_policies_enabled = false
-}
-
 resource "azurerm_subnet" "jobs" {
   name                 = "snet-jobs"
   resource_group_name  = var.rg
@@ -76,14 +66,14 @@ resource "azurerm_network_security_group" "web" {
   tags                = var.tags
 
   security_rule {
-    name                       = "allow-pls"
+    name                       = "allow-frontdoor"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = tostring(var.app_port)
-    source_address_prefix      = var.pls_subnet_cidr
+    source_address_prefix      = "AzureFrontDoor.Backend"
     destination_address_prefix = "*"
   }
 
@@ -113,7 +103,7 @@ resource "azurerm_network_security_group" "web" {
 }
 
 # ---------------------------------------------------------------------------
-# API tier NSG: Private Link edge + the web subnet (east-west); deny direct net.
+# API tier NSG: Front Door edge + the web subnet (east-west); deny direct net.
 # ---------------------------------------------------------------------------
 resource "azurerm_network_security_group" "api" {
   name                = "nsg-api"
@@ -122,14 +112,14 @@ resource "azurerm_network_security_group" "api" {
   tags                = var.tags
 
   security_rule {
-    name                       = "allow-pls"
+    name                       = "allow-frontdoor"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = tostring(var.app_port)
-    source_address_prefix      = var.pls_subnet_cidr
+    source_address_prefix      = "AzureFrontDoor.Backend"
     destination_address_prefix = "*"
   }
 

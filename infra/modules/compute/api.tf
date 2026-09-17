@@ -1,5 +1,55 @@
-# -------- API internal load balancer: serves both east-west (web -> api) and the
-# Front Door origin (via the Private Link Service below). No public frontend.
+# -------- API public load balancer (Front Door origin) --------
+resource "azurerm_public_ip" "api" {
+  name                = "${var.short_prefix}-api-pip"
+  resource_group_name = var.rg
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
+  domain_name_label   = "${var.short_prefix}-api-${var.suffix}"
+  tags                = var.tags
+}
+
+resource "azurerm_lb" "api_public" {
+  name                = "${var.short_prefix}-api-lb"
+  resource_group_name = var.rg
+  location            = var.location
+  sku                 = "Standard"
+  tags                = var.tags
+
+  frontend_ip_configuration {
+    name                 = "public"
+    public_ip_address_id = azurerm_public_ip.api.id
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "api_public" {
+  name            = "bepool-api-pub"
+  loadbalancer_id = azurerm_lb.api_public.id
+}
+
+resource "azurerm_lb_probe" "api_public" {
+  name                = "probe-api-pub"
+  loadbalancer_id     = azurerm_lb.api_public.id
+  protocol            = "Http"
+  port                = var.app_port
+  request_path        = "/health"
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+resource "azurerm_lb_rule" "api_public" {
+  name                           = "rule-api-public"
+  loadbalancer_id                = azurerm_lb.api_public.id
+  frontend_ip_configuration_name = "public"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = var.app_port
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api_public.id]
+  probe_id                       = azurerm_lb_probe.api_public.id
+}
+
+# -------- API internal load balancer (east-west: web -> api) --------
 resource "azurerm_lb" "api_internal" {
   name                = "${var.short_prefix}-api-int-lb"
   resource_group_name = var.rg
@@ -40,24 +90,6 @@ resource "azurerm_lb_rule" "api_internal" {
   backend_port                   = var.app_port
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.api_internal.id]
   probe_id                       = azurerm_lb_probe.api_internal.id
-}
-
-# Front Door reaches the api origin privately through this Private Link Service.
-resource "azurerm_private_link_service" "api" {
-  name                = "${var.short_prefix}-api-pls"
-  resource_group_name = var.rg
-  location            = var.location
-  tags                = var.tags
-
-  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
-  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.api_internal.frontend_ip_configuration[0].id]
-
-  nat_ip_configuration {
-    name                       = "primary"
-    subnet_id                  = var.pls_subnet_id
-    private_ip_address_version = "IPv4"
-    primary                    = true
-  }
 }
 
 # -------- API scale set (health via Application Health Extension) --------
@@ -102,6 +134,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "api" {
       primary   = true
       subnet_id = var.api_subnet_id
       load_balancer_backend_address_pool_ids = [
+        azurerm_lb_backend_address_pool.api_public.id,
         azurerm_lb_backend_address_pool.api_internal.id,
       ]
     }

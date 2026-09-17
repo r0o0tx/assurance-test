@@ -18,10 +18,6 @@ output "jobs_subnet_id" {
   value = azurerm_subnet.jobs.id
 }
 
-output "pls_subnet_id" {
-  value = azurerm_subnet.pls.id
-}
-
 output "api_subnet_cidr" {
   value = var.api_subnet_cidr
 }

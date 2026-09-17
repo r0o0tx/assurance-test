@@ -43,9 +43,3 @@ variable "jobs_subnet_cidr" {
   type    = string
   default = "10.40.4.0/24"
 }
-
-variable "pls_subnet_cidr" {
-  type        = string
-  default     = "10.40.5.0/24"
-  description = "NAT subnet for the Private Link Services that front the tier load balancers."
-}

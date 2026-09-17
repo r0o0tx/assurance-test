@@ -1,7 +1,15 @@
-data "azurerm_client_config" "current" {}
+# -------- Web load balancer: single public frontend (Front Door origin) --------
+resource "azurerm_public_ip" "web" {
+  name                = "${var.short_prefix}-web-pip"
+  resource_group_name = var.rg
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
+  domain_name_label   = "${var.short_prefix}-web-${var.suffix}"
+  tags                = var.tags
+}
 
-# -------- Web load balancer: internal frontend, exposed to Front Door via a
-# Private Link Service so the origin is never reachable from the public internet.
 resource "azurerm_lb" "web" {
   name                = "${var.short_prefix}-web-lb"
   resource_group_name = var.rg
@@ -10,28 +18,8 @@ resource "azurerm_lb" "web" {
   tags                = var.tags
 
   frontend_ip_configuration {
-    name                          = "internal"
-    subnet_id                     = var.web_subnet_id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = var.web_internal_ip
-    zones                         = ["1", "2", "3"]
-  }
-}
-
-resource "azurerm_private_link_service" "web" {
-  name                = "${var.short_prefix}-web-pls"
-  resource_group_name = var.rg
-  location            = var.location
-  tags                = var.tags
-
-  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
-  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.web.frontend_ip_configuration[0].id]
-
-  nat_ip_configuration {
-    name                       = "primary"
-    subnet_id                  = var.pls_subnet_id
-    private_ip_address_version = "IPv4"
-    primary                    = true
+    name                 = "public"
+    public_ip_address_id = azurerm_public_ip.web.id
   }
 }
 
@@ -50,12 +38,12 @@ resource "azurerm_lb_probe" "web" {
   number_of_probes    = 2
 }
 
-resource "azurerm_lb_rule" "web_internal" {
-  name                           = "rule-web-internal"
+resource "azurerm_lb_rule" "web_public" {
+  name                           = "rule-web-public"
   loadbalancer_id                = azurerm_lb.web.id
-  frontend_ip_configuration_name = "internal"
+  frontend_ip_configuration_name = "public"
   protocol                       = "Tcp"
-  frontend_port                  = var.app_port
+  frontend_port                  = 80
   backend_port                   = var.app_port
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.web.id]
   probe_id                       = azurerm_lb_probe.web.id
