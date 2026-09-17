@@ -152,10 +152,14 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "backup_failure" {
   tags                 = var.tags
 
   criteria {
-    # isfuzzy tolerates the ContainerInstanceLog_CL table not existing yet on a
-    # fresh deploy (it is created only once the backup container first logs).
+    # The empty datatable is an always-evaluatable seed so the fuzzy union still
+    # resolves before the backup container has ever shipped a log (the
+    # ContainerInstanceLog_CL table does not exist until then). Once logs flow the
+    # real table contributes rows.
     query                   = <<-QUERY
-      union isfuzzy=true ContainerInstanceLog_CL
+      union isfuzzy=true
+        (datatable(ContainerGroup_s: string, Message: string) []),
+        ContainerInstanceLog_CL
       | where ContainerGroup_s == "${var.short_prefix}-backup"
       | where Message has "uploaded appdb/"
       | summarize successes = count()
