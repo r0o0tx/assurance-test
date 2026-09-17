@@ -15,6 +15,14 @@ resource "azurerm_container_group" "backup" {
     identity_ids = [var.identity_id]
   }
 
+  # Ship container stdout/stderr to Log Analytics so backup success/failure is queryable.
+  diagnostics {
+    log_analytics {
+      workspace_id  = var.law_workspace_id
+      workspace_key = var.law_workspace_key
+    }
+  }
+
   image_registry_credential {
     server                    = var.acr_login_server
     user_assigned_identity_id = var.identity_id

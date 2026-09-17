@@ -29,6 +29,13 @@ resource "azurerm_monitor_metric_alert" "web_cpu" {
     operator         = "GreaterThan"
     threshold        = 85
   }
+
+  dynamic "action" {
+    for_each = azurerm_monitor_action_group.main[*].id
+    content {
+      action_group_id = action.value
+    }
+  }
 }
 
 resource "azurerm_monitor_metric_alert" "api_cpu" {
@@ -47,6 +54,13 @@ resource "azurerm_monitor_metric_alert" "api_cpu" {
     aggregation      = "Average"
     operator         = "GreaterThan"
     threshold        = 85
+  }
+
+  dynamic "action" {
+    for_each = azurerm_monitor_action_group.main[*].id
+    content {
+      action_group_id = action.value
+    }
   }
 }
 
@@ -67,6 +81,13 @@ resource "azurerm_monitor_metric_alert" "db_cpu" {
     operator         = "GreaterThan"
     threshold        = 85
   }
+
+  dynamic "action" {
+    for_each = azurerm_monitor_action_group.main[*].id
+    content {
+      action_group_id = action.value
+    }
+  }
 }
 
 resource "azurerm_monitor_metric_alert" "fd_latency" {
@@ -85,5 +106,12 @@ resource "azurerm_monitor_metric_alert" "fd_latency" {
     aggregation      = "Average"
     operator         = "GreaterThan"
     threshold        = 1000
+  }
+
+  dynamic "action" {
+    for_each = azurerm_monitor_action_group.main[*].id
+    content {
+      action_group_id = action.value
+    }
   }
 }

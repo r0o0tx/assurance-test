@@ -49,3 +49,14 @@ variable "key_vault_id" {
 variable "acr_id" {
   type = string
 }
+
+variable "frontdoor_endpoint_host" {
+  type        = string
+  description = "Public Front Door hostname, probed by the synthetic availability test."
+}
+
+variable "alert_email" {
+  type        = string
+  description = "Destination for operational alerts. Empty disables the action group and all alert rules."
+  default     = ""
+}

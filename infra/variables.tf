@@ -75,3 +75,9 @@ variable "ssh_public_key" {
   type        = string
   description = "SSH public key for VMSS admin (management fallback; password auth disabled)."
 }
+
+variable "alert_email" {
+  type        = string
+  default     = ""
+  description = "Operational alert destination. Empty (default) disables the action group and all alert rules; set per environment to enable."
+}

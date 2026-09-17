@@ -41,3 +41,13 @@ variable "acr_login_server" {
 variable "key_vault_name" {
   type = string
 }
+
+variable "law_workspace_id" {
+  type        = string
+  description = "Log Analytics workspace GUID; ships the backup container logs off-box for alerting."
+}
+
+variable "law_workspace_key" {
+  type      = string
+  sensitive = true
+}

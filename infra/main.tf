@@ -111,20 +111,22 @@ module "edge" {
 }
 
 module "observability" {
-  source                = "./modules/observability"
-  rg                    = local.rg
-  location              = local.location
-  tags                  = local.tags
-  short_prefix          = var.short_prefix
-  identity_principal_id = module.security.identity_principal_id
-  web_vmss_id           = module.compute.web_vmss_id
-  api_vmss_id           = module.compute.api_vmss_id
-  web_lb_id             = module.compute.web_lb_id
-  api_lb_id             = module.compute.api_public_lb_id
-  frontdoor_profile_id  = module.edge.frontdoor_profile_id
-  db_id                 = module.data.db_id
-  key_vault_id          = module.security.key_vault_id
-  acr_id                = module.registry.acr_id
+  source                  = "./modules/observability"
+  rg                      = local.rg
+  location                = local.location
+  tags                    = local.tags
+  short_prefix            = var.short_prefix
+  identity_principal_id   = module.security.identity_principal_id
+  web_vmss_id             = module.compute.web_vmss_id
+  api_vmss_id             = module.compute.api_vmss_id
+  web_lb_id               = module.compute.web_lb_id
+  api_lb_id               = module.compute.api_public_lb_id
+  frontdoor_profile_id    = module.edge.frontdoor_profile_id
+  frontdoor_endpoint_host = module.edge.frontdoor_hostname
+  db_id                   = module.data.db_id
+  key_vault_id            = module.security.key_vault_id
+  acr_id                  = module.registry.acr_id
+  alert_email             = var.alert_email
 }
 
 module "backup" {
@@ -140,6 +142,8 @@ module "backup" {
   identity_principal_id = module.security.identity_principal_id
   acr_login_server      = module.registry.login_server
   key_vault_name        = module.security.key_vault_name
+  law_workspace_id      = module.observability.law_workspace_guid
+  law_workspace_key     = module.observability.law_primary_shared_key
 
   # Needs DB secrets in Key Vault (data) to back up.
   depends_on = [module.data]
