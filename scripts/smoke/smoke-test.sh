@@ -4,7 +4,9 @@
 set -euo pipefail
 
 FD="${1:?usage: smoke-test.sh <frontdoor-hostname>}"
-RETRY=(--retry 20 --retry-delay 3 --retry-all-errors --retry-connrefused)
+# Generous budget: a Front Door SKU change recreates the endpoint, and a fresh
+# endpoint can take several minutes to serve at the edge (early requests 404).
+RETRY=(--retry 40 --retry-delay 15 --retry-all-errors --retry-connrefused)
 
 fail() {
   echo "SMOKE FAIL: $1"
@@ -21,7 +23,7 @@ echo "$status" | grep -q '"time"' || fail "api /api/status did not return a db t
 echo "ok (db reachable)"
 
 echo -n "web render     : "
-curl -fsS "https://$FD/" | grep -qi "3tier App" || fail "web did not render"
+curl -fsS "${RETRY[@]}" "https://$FD/" | grep -qi "3tier App" || fail "web did not render"
 echo "ok"
 
 echo "smoke test passed"
