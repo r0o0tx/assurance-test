@@ -64,6 +64,16 @@ variable "api_internal_ip" {
   default = "10.40.2.10"
 }
 
+variable "web_internal_ip" {
+  type    = string
+  default = "10.40.1.10"
+}
+
+variable "pls_subnet_id" {
+  type        = string
+  description = "NAT subnet for the tier Private Link Services."
+}
+
 variable "web_instance_count" {
   type = number
 }

@@ -98,6 +98,7 @@ module "compute" {
   key_vault_name     = module.security.key_vault_name
   web_subnet_id      = module.network.web_subnet_id
   api_subnet_id      = module.network.api_subnet_id
+  pls_subnet_id      = module.network.pls_subnet_id
   web_instance_count = var.web_instance_count
   api_instance_count = var.api_instance_count
   web_image_tag      = var.web_image_tag
@@ -110,11 +111,14 @@ module "compute" {
 module "edge" {
   source          = "./modules/edge"
   rg              = local.rg
+  location        = local.location
   tags            = local.tags
   short_prefix    = var.short_prefix
   suffix          = local.suffix
-  web_origin_host = module.compute.web_public_fqdn
-  api_origin_host = module.compute.api_public_fqdn
+  web_origin_host = module.compute.web_internal_ip
+  api_origin_host = module.compute.api_internal_ip
+  web_pls_id      = module.compute.web_pls_id
+  api_pls_id      = module.compute.api_pls_id
 }
 
 module "observability" {
@@ -127,7 +131,7 @@ module "observability" {
   web_vmss_id             = module.compute.web_vmss_id
   api_vmss_id             = module.compute.api_vmss_id
   web_lb_id               = module.compute.web_lb_id
-  api_lb_id               = module.compute.api_public_lb_id
+  api_lb_id               = module.compute.api_internal_lb_id
   frontdoor_profile_id    = module.edge.frontdoor_profile_id
   frontdoor_endpoint_host = module.edge.frontdoor_hostname
   db_id                   = module.data.db_id

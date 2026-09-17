@@ -28,12 +28,8 @@ output "db_fqdn" {
   value = module.data.db_fqdn
 }
 
-output "web_public_fqdn" {
-  value = module.compute.web_public_fqdn
-}
-
-output "api_public_fqdn" {
-  value = module.compute.api_public_fqdn
+output "web_internal_ip" {
+  value = module.compute.web_internal_ip
 }
 
 output "api_internal_ip" {
