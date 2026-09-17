@@ -55,11 +55,17 @@ resource "azurerm_cdn_frontdoor_origin" "web" {
   enabled                        = true
   host_name                      = var.web_origin_host
   origin_host_header             = var.web_origin_host
-  http_port                      = 80
+  http_port                      = var.app_port
   https_port                     = 443
   priority                       = 1
   weight                         = 1000
   certificate_name_check_enabled = false
+
+  private_link {
+    request_message        = "front door origin access"
+    location               = var.location
+    private_link_target_id = var.web_pls_id
+  }
 }
 
 resource "azurerm_cdn_frontdoor_origin" "api" {
@@ -68,11 +74,17 @@ resource "azurerm_cdn_frontdoor_origin" "api" {
   enabled                        = true
   host_name                      = var.api_origin_host
   origin_host_header             = var.api_origin_host
-  http_port                      = 80
+  http_port                      = var.app_port
   https_port                     = 443
   priority                       = 1
   weight                         = 1000
   certificate_name_check_enabled = false
+
+  private_link {
+    request_message        = "front door origin access"
+    location               = var.location
+    private_link_target_id = var.api_pls_id
+  }
 }
 
 # -------- Rule set: keep the dynamic web paths uncached --------
