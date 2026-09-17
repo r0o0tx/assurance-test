@@ -106,6 +106,30 @@ jobs:
           terraform apply -auto-approve \
             -var-file="environments/${{ inputs.environment }}.tfvars" \
             -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
+      # Front Door reaches the origins over Private Link. The pending private
+      # endpoint connection on each service must be approved before traffic flows.
+      - name: Approve Front Door private link connections
+        run: |
+          set -euo pipefail
+          RG="rg-assurance-test-${{ inputs.environment }}"
+          for pls in astst-web-pls astst-api-pls; do
+            for attempt in $(seq 1 12); do
+              approved=$(az network private-endpoint-connection list --name "$pls" -g "$RG" \
+                --type Microsoft.Network/privateLinkServices \
+                --query "[?properties.privateLinkServiceConnectionState.status=='Approved'].id" -o tsv 2>/dev/null || true)
+              [ -n "$approved" ] && { echo "$pls already approved"; break; }
+              pending=$(az network private-endpoint-connection list --name "$pls" -g "$RG" \
+                --type Microsoft.Network/privateLinkServices \
+                --query "[?properties.privateLinkServiceConnectionState.status=='Pending'].id" -o tsv 2>/dev/null || true)
+              if [ -n "$pending" ]; then
+                for id in $pending; do
+                  az network private-endpoint-connection approve --id "$id" --description "approved by deploy" >/dev/null
+                done
+                echo "$pls approved"; break
+              fi
+              echo "waiting for $pls connection (attempt $attempt)"; sleep 10
+            done
+          done
       # Freshly imaged nodes take a minute or two to pull the container and pass
       # the health probe. Wait for them before touching the rolling upgrade,
       # otherwise it aborts against a 100%-unhealthy (still-booting) baseline.
