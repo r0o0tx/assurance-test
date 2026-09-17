@@ -2,9 +2,15 @@ resource "azurerm_container_registry" "main" {
   name                = "${var.short_prefix}acr${var.suffix}"
   resource_group_name = var.rg
   location            = var.location
-  sku                 = "Standard"
+  sku                 = "Premium"
   admin_enabled       = false
   tags                = var.tags
+
+  # Reap untagged manifests so superseded image layers do not linger.
+  retention_policy {
+    days    = 7
+    enabled = true
+  }
 }
 
 # VMSS instances pull images with their managed identity (no registry passwords).

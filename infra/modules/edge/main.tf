@@ -1,7 +1,7 @@
 resource "azurerm_cdn_frontdoor_profile" "main" {
   name                = "${var.short_prefix}-fd"
   resource_group_name = var.rg
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Premium_AzureFrontDoor"
   tags                = var.tags
 }
 
@@ -167,7 +167,7 @@ resource "azurerm_cdn_frontdoor_route" "web" {
 resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
   name                = "${var.short_prefix}waf"
   resource_group_name = var.rg
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Premium_AzureFrontDoor"
   enabled             = true
   mode                = "Prevention"
 
@@ -185,6 +185,19 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
       operator       = "Contains"
       match_values   = ["/"]
     }
+  }
+
+  # Managed rulesets (Premium tier): OWASP core protection + bot mitigation.
+  managed_rule {
+    type    = "Microsoft_DefaultRuleSet"
+    version = "2.1"
+    action  = "Block"
+  }
+
+  managed_rule {
+    type    = "Microsoft_BotManagerRuleSet"
+    version = "1.0"
+    action  = "Block"
   }
 
   tags = var.tags
