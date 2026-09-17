@@ -21,4 +21,6 @@ terraform {
 #   - in CI:    azure/login (OIDC federation) leaves the CLI authenticated
 provider "azurerm" {
   features {}
+  # Empty uses the CLI default subscription; set per-env for multi-subscription.
+  subscription_id = var.subscription_id != "" ? var.subscription_id : null
 }

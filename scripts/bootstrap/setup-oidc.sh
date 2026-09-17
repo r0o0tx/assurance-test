@@ -27,12 +27,14 @@ az ad app federated-credential create --id "$APP_ID" --parameters "{
   \"audiences\": [\"api://AzureADTokenExchange\"]
 }"
 
-az ad app federated-credential create --id "$APP_ID" --parameters "{
-  \"name\": \"gh-env-prod\",
-  \"issuer\": \"https://token.actions.githubusercontent.com\",
-  \"subject\": \"${SUB_PREFIX}:environment:prod\",
-  \"audiences\": [\"api://AzureADTokenExchange\"]
-}"
+for ENV in dev staging prod; do
+  az ad app federated-credential create --id "$APP_ID" --parameters "{
+    \"name\": \"gh-env-${ENV}\",
+    \"issuer\": \"https://token.actions.githubusercontent.com\",
+    \"subject\": \"${SUB_PREFIX}:environment:${ENV}\",
+    \"audiences\": [\"api://AzureADTokenExchange\"]
+  }"
+done
 
 # Roles scoped to the single resource group:
 #  - Contributor: manage resources

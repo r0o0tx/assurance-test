@@ -11,45 +11,27 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-prod
+  group: deploy
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-    environment: prod
-    env:
-      TF_VAR_ssh_public_key: ${{ vars.TF_VAR_SSH_PUBLIC_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-      - name: Terraform apply with new image tags
-        working-directory: infra
-        run: |
-          set -euo pipefail
-          SHA="${{ github.event.workflow_run.head_sha }}"
-          SHA="${SHA:0:12}"
-          terraform init \
-            -backend-config="resource_group_name=${{ vars.STATE_RG }}" \
-            -backend-config="storage_account_name=${{ vars.STATE_SA }}"
-          terraform apply -auto-approve \
-            -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
-      - name: Trigger health-gated rolling upgrade
-        run: |
-          set -euo pipefail
-          RG="${{ vars.STATE_RG }}"
-          for t in web api; do
-            az vmss rolling-upgrade start -g "$RG" -n "astst-$t-vmss" \
-              || az vmss update-instances -g "$RG" -n "astst-$t-vmss" --instance-ids '*'
-          done
-      - name: Smoke test through Front Door
-        working-directory: infra
-        run: bash ../scripts/smoke/smoke-test.sh "$(terraform output -raw frontdoor_hostname)"
+  # Deploy to dev first (enable by setting repo variable DEPLOY_DEV=true once dev
+  # is bootstrapped). Skipped by default so the pipeline stays green.
+  dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_DEV == 'true' }}
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: dev
+      sha: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit
+
+  # Prod runs after dev (whether dev ran or was skipped). The prod GitHub
+  # environment can require a manual approval before this proceeds.
+  prod:
+    needs: [dev]
+    if: ${{ always() && github.event.workflow_run.conclusion == 'success' && (needs.dev.result == 'success' || needs.dev.result == 'skipped') }}
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: prod
+      sha: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit

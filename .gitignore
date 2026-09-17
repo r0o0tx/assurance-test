@@ -10,4 +10,5 @@ tfplan
 crash.log
 *.tfvars
 !*.tfvars.example
+!infra/environments/*.tfvars
 .DS_Store

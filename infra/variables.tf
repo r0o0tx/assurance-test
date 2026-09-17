@@ -1,11 +1,28 @@
+variable "environment" {
+  type        = string
+  default     = "prod"
+  description = "Deployment environment (dev, staging, prod). Drives the RG name, tags, and state key."
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be one of: dev, staging, prod."
+  }
+}
+
+variable "subscription_id" {
+  type        = string
+  default     = ""
+  description = "Target subscription. Empty uses the CLI default; set per-env for multi-subscription separation."
+}
+
 variable "location" {
   type    = string
   default = "eastus"
 }
 
 variable "resource_group" {
-  type    = string
-  default = "rg-assurance-test-prod"
+  type        = string
+  default     = null
+  description = "Override the resource group name. Defaults to rg-<name_prefix>-<environment>."
 }
 
 variable "name_prefix" {
@@ -48,17 +65,13 @@ variable "db_sku" {
   default = "GP_Standard_D2ds_v4"
 }
 
-variable "ssh_public_key" {
-  type        = string
-  description = "SSH public key for VMSS admin (management fallback; password auth disabled)"
+variable "high_availability_enabled" {
+  type        = bool
+  default     = true
+  description = "Zone-redundant DB HA. Enable in prod; disable in dev/staging to reduce cost (needs a General Purpose db_sku)."
 }
 
-variable "tags" {
-  type = map(string)
-  default = {
-    app        = "assurance-test"
-    env        = "prod"
-    managed-by = "terraform"
-    owner      = "shubham"
-  }
+variable "ssh_public_key" {
+  type        = string
+  description = "SSH public key for VMSS admin (management fallback; password auth disabled)."
 }

@@ -24,9 +24,12 @@ resource "azurerm_postgresql_flexible_server" "db" {
 
   public_network_access_enabled = false
 
-  high_availability {
-    mode                      = "ZoneRedundant"
-    standby_availability_zone = "2"
+  dynamic "high_availability" {
+    for_each = var.high_availability_enabled ? [1] : []
+    content {
+      mode                      = "ZoneRedundant"
+      standby_availability_zone = "2"
+    }
   }
 
   backup_retention_days        = 7

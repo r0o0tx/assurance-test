@@ -1,8 +1,11 @@
 # Infrastructure
 
-Terraform for the `assurance-test` platform. All resources live in a single resource
-group; the group and the Terraform state storage are created once by the bootstrap script
-and are not managed by Terraform (so `terraform destroy` never removes state).
+Terraform for the `assurance-test` platform. It is environment-parameterised: `dev`,
+`staging` and `prod` each get their own resource group (`rg-assurance-test-<env>`), their
+own state key, and their own sizing (`environments/<env>.tfvars`) — same modules, DRY. Each
+environment's resource group and state storage are created once by the bootstrap script and
+are not managed by Terraform (so `terraform destroy` never removes state). A per-environment
+`subscription_id` can be set for multi-subscription separation.
 
 ## Prerequisites
 
