@@ -43,12 +43,21 @@ jobs:
           az storage account network-rule add --account-name "${{ vars.STATE_SA }}" --ip-address "$RUNNER_IP" >/dev/null
       - name: Terraform init
         working-directory: infra
+        # A storage network-rule can take up to a minute to take effect, so retry
+        # init until the backend is reachable rather than failing on the race.
         run: |
           set -euo pipefail
-          terraform init \
-            -backend-config="resource_group_name=rg-assurance-test-${{ inputs.environment }}" \
-            -backend-config="storage_account_name=${{ vars.STATE_SA }}" \
-            -backend-config="key=${{ inputs.environment }}.tfstate"
+          for attempt in $(seq 1 8); do
+            if terraform init \
+              -backend-config="resource_group_name=rg-assurance-test-${{ inputs.environment }}" \
+              -backend-config="storage_account_name=${{ vars.STATE_SA }}" \
+              -backend-config="key=${{ inputs.environment }}.tfstate"; then
+              exit 0
+            fi
+            echo "init attempt $attempt failed (state firewall may still be propagating); retrying in 20s"
+            sleep 20
+          done
+          exit 1
       - name: Open deploy firewall (key vault + backup storage)
         working-directory: infra
         run: |
@@ -57,6 +66,8 @@ jobs:
           BKP="$(terraform output -raw backup_sa 2>/dev/null || true)"
           [ -n "$KV" ]  && az keyvault network-rule add --name "$KV" --ip-address "$RUNNER_IP" >/dev/null || true
           [ -n "$BKP" ] && az storage account network-rule add --account-name "$BKP" --ip-address "$RUNNER_IP" >/dev/null || true
+          # Let the key vault / backup rules propagate before apply reads secrets.
+          sleep 30
       - name: Terraform apply (${{ inputs.environment }})
         working-directory: infra
         run: |
