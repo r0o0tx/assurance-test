@@ -38,3 +38,15 @@ variable "private_dns_zone_id" {
 variable "key_vault_id" {
   type = string
 }
+
+variable "entra_auth_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable Entra ID authentication on the server alongside password auth, so an Entra group can be set as the database administrator."
+}
+
+variable "tenant_id" {
+  type        = string
+  default     = ""
+  description = "Entra tenant for Entra ID authentication; required when entra_auth_enabled is true."
+}

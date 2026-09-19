@@ -99,3 +99,9 @@ variable "log_daily_quota_gb" {
   default     = -1
   description = "Log Analytics daily ingestion cap in GB (-1 = uncapped). Set per environment to bound monitoring cost; lower tiers use a tighter cap."
 }
+
+variable "rbac_enabled" {
+  type        = bool
+  default     = false
+  description = "Provision the Entra role groups, scoped custom roles, and the database Entra admin. Off by default: enabling it requires the deploying identity to hold Microsoft Graph Group.ReadWrite.All (admin-consented), so it is typically applied locally under an Entra directory admin."
+}

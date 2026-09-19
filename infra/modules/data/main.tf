@@ -15,6 +15,14 @@ resource "azurerm_postgresql_flexible_server" "db" {
   administrator_login    = "appadmin"
   administrator_password = random_password.db.result
 
+  # Password auth stays on for the application; Entra auth is switched on only
+  # when the RBAC layer needs to promote an Entra group to database admin.
+  authentication {
+    password_auth_enabled         = true
+    active_directory_auth_enabled = var.entra_auth_enabled
+    tenant_id                     = var.entra_auth_enabled ? var.tenant_id : null
+  }
+
   sku_name   = var.db_sku
   storage_mb = 32768
   zone       = "1"

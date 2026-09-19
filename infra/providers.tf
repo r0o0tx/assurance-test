@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.53"
+    }
   }
 }
 
@@ -24,3 +28,6 @@ provider "azurerm" {
   # Empty uses the CLI default subscription; set per-env for multi-subscription.
   subscription_id = var.subscription_id != "" ? var.subscription_id : null
 }
+
+# Same CLI credential chain; used for the optional Entra ID role groups.
+provider "azuread" {}

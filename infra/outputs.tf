@@ -51,3 +51,8 @@ output "law_id" {
 output "backup_sa" {
   value = module.backup.backup_sa
 }
+
+output "rbac_group_names" {
+  description = "Role slug -> Entra group display name (empty unless rbac_enabled)."
+  value       = var.rbac_enabled ? module.rbac[0].group_names : {}
+}

@@ -15,6 +15,8 @@ data "azurerm_resource_group" "main" {
   name = local.rg_name
 }
 
+data "azurerm_client_config" "current" {}
+
 # Short random suffix for globally-unique names (storage, acr, front door, db).
 resource "random_string" "suffix" {
   length  = 6
@@ -77,9 +79,23 @@ module "data" {
   db_subnet_id              = module.network.db_subnet_id
   private_dns_zone_id       = module.network.pg_dns_zone_id
   key_vault_id              = module.security.key_vault_id
+  entra_auth_enabled        = var.rbac_enabled
+  tenant_id                 = data.azurerm_client_config.current.tenant_id
 
   # Wait for the private DNS zone link (network) and KV RBAC propagation (security).
   depends_on = [module.network, module.security]
+}
+
+# Entra role groups + scoped roles + database Entra admin. Opt-in; see rbac_enabled.
+module "rbac" {
+  count          = var.rbac_enabled ? 1 : 0
+  source         = "./modules/rbac"
+  rg_id          = data.azurerm_resource_group.main.id
+  rg_name        = local.rg
+  short_prefix   = var.short_prefix
+  environment    = var.environment
+  tenant_id      = data.azurerm_client_config.current.tenant_id
+  db_server_name = module.data.db_server_name
 }
 
 module "compute" {
