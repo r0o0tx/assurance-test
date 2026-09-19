@@ -6,19 +6,21 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege at the workflow root; only the build job opts into OIDC.
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         tier: [web, api]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: "18"
       - run: npm ci
@@ -30,31 +32,57 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build tier images
         run: |
           set -euo pipefail
           SHA="${GITHUB_SHA::12}"
-          ACR_NAME=$(az acr list -g "${{ vars.STATE_RG }}" --query "[?starts_with(name,'aststacr')].name | [0]" -o tsv)
-          ACR="$ACR_NAME.azurecr.io"
-          echo "ACR_NAME=$ACR_NAME" >> "$GITHUB_ENV"
-          echo "ACR=$ACR" >> "$GITHUB_ENV"
           echo "SHA=$SHA" >> "$GITHUB_ENV"
-          for t in web api; do docker build -t "$ACR/$t:$SHA" "app/$t"; done
-      - name: Scan images (Trivy)
-        uses: aquasecurity/trivy-action@master
+          for t in web api; do docker build -t "$t:$SHA" "app/$t"; done
+          docker save "api:$SHA" -o api-image.tar
+      # Hand the built image to a separate, tokenless job for scanning so a
+      # compromised scanner action can never reach this job's OIDC credential.
+      - name: Stage image for scan
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          image-ref: ${{ env.ACR }}/api:${{ env.SHA }}
-          severity: HIGH,CRITICAL
-          exit-code: "0" # report; gate by policy when ready
+          name: api-image
+          path: api-image.tar
+          retention-days: 1
+      - uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Push images
         run: |
           set -euo pipefail
+          ACR_NAME=$(az acr list -g "${{ vars.STATE_RG }}" --query "[?starts_with(name,'aststacr')].name | [0]" -o tsv)
+          ACR="$ACR_NAME.azurecr.io"
           az acr login --name "$ACR_NAME"
-          for t in web api; do docker push "$ACR/$t:$SHA"; done
+          for t in web api; do
+            docker tag "$t:$SHA" "$ACR/$t:$SHA"
+            docker push "$ACR/$t:$SHA"
+          done
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    # No id-token here: this job handles a third-party scanner and must not
+    # be able to mint cloud credentials.
+    permissions:
+      contents: read
+    steps:
+      - name: Fetch built image
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: api-image
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: api-image.tar
+          severity: HIGH,CRITICAL
+          exit-code: "0" # report; gate by policy when ready
