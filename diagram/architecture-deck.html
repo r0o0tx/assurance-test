@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Continuous delivery for a 3-tier Node platform</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #23303d; }
+  .slide {
+    position: relative;
+    width: 1280px; height: 720px;
+    padding: 64px 80px;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  h2 { color: #1f5aa8; font-size: 40px; font-weight: 700; margin-bottom: 28px; }
+  ul { list-style: none; }
+  li { font-size: 22px; line-height: 1.55; margin-bottom: 16px; padding-left: 22px; position: relative; }
+  li::before { content: ""; position: absolute; left: 0; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: #1f5aa8; }
+  li b { color: #1f5aa8; }
+  .lead { color: #6b7684; font-size: 20px; line-height: 1.5; margin-top: 22px; }
+  code { background: #eef2f8; border-radius: 4px; padding: 1px 7px; font-family: Consolas, monospace; font-size: 19px; }
+
+  /* Title slide */
+  .title {
+    background: linear-gradient(135deg, #0b2a52 0%, #1c4a86 100%);
+    color: #ffffff;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .title h1 { font-size: 58px; font-weight: 800; line-height: 1.1; max-width: 900px; }
+  .title p { font-size: 24px; color: #c7d6ec; margin-top: 22px; }
+
+  /* Architecture slide */
+  .arch { display: flex; flex-direction: column; }
+  .arch .canvas { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .arch img { max-width: 100%; max-height: 470px; object-fit: contain; }
+  .caption { text-align: right; color: #6b7684; font-size: 19px; margin-top: 14px; }
+
+  /* Requirement table */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: #1f5aa8; font-size: 18px; padding: 8px 12px; border-bottom: 2px solid #d7deea; }
+  td { font-size: 18px; padding: 9px 12px; border-bottom: 1px solid #e9edf4; vertical-align: top; }
+  td.req { width: 30%; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<section class="slide title">
+  <h1>Continuous delivery for a 3-tier Node platform</h1>
+  <p>Scalable, secure, self-healing, zero-downtime. On Azure, fully IaC.</p>
+</section>
+
+<section class="slide arch">
+  <h2>Architecture</h2>
+  <div class="canvas"><img src="architecture.png" alt="architecture diagram"></div>
+  <div class="caption">Azure Front Door to VMSS web and api across two zones, to a private zone-redundant PostgreSQL.</div>
+</section>
+
+<section class="slide">
+  <h2>How each requirement is met</h2>
+  <table>
+    <tr><th>Requirement</th><th>Implementation</th></tr>
+    <tr><td class="req">Web and API on the Internet</td><td>Front Door routes <code>/*</code> and <code>/api/*</code> to per-tier VMSS behind load balancers</td></tr>
+    <tr><td class="req">Database not public</td><td>PostgreSQL Flexible Server, private VNet access, NSG-restricted, no public IP</td></tr>
+    <tr><td class="req">Fully IaC</td><td>Terraform, remote state with locking, one resource group, three environments</td></tr>
+    <tr><td class="req">Survive instance failure</td><td>VMSS across two zones, health probes, auto-repair; zone-redundant database HA</td></tr>
+    <tr><td class="req">Update without downtime</td><td>Health-gated VMSS rolling upgrades, SHA-tagged images</td></tr>
+    <tr><td class="req">Automated deployment</td><td>GitHub Actions: test, build, apply, rolling upgrade, smoke test</td></tr>
+    <tr><td class="req">Daily backups</td><td>Flexible Server point-in-time restore plus an in-VNet pg_dump to versioned blob</td></tr>
+    <tr><td class="req">Logs off-host</td><td>Azure Monitor Agent and diagnostics to Log Analytics</td></tr>
+    <tr><td class="req">Historical metrics</td><td>Azure Monitor dashboard and alerts</td></tr>
+    <tr><td class="req">CDN by location</td><td>Azure Front Door global edge with static caching</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Delivery pipeline and resilience</h2>
+  <ul>
+    <li><b>Pipeline:</b> push, then lint and test, then build and push SHA-tagged images to ACR, then terraform apply, then a health-gated rolling upgrade, then a smoke test through Front Door.</li>
+    <li><b>Zero downtime:</b> a new image replaces an instance only after the new one passes <code>/health</code>; Front Door and the load balancer route only to healthy nodes.</li>
+    <li><b>Self-healing:</b> unhealthy instances are auto-repaired; the database fails over to a standby in another zone.</li>
+    <li><b>Secrets:</b> Key Vault plus managed identity, no credentials on disk or in git.</li>
+    <li><b>State:</b> shared Terraform state in Azure Storage with blob-lease locking, ready for a team.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Security posture</h2>
+  <ul>
+    <li><b>Edge:</b> Premium Front Door with the managed OWASP ruleset and bot-manager rules in blocking mode; origins only accept traffic from Front Door.</li>
+    <li><b>Data planes locked:</b> Key Vault, the backup storage account and the Terraform state account default-deny public access and are reachable only from the app subnets and the CI runner.</li>
+    <li><b>Secrets and transport:</b> secrets come from Key Vault via managed identity, never from disk or git; the database connection is TLS-only.</li>
+    <li><b>Supply chain:</b> keyless OIDC deploys, workflow actions pinned to commit digests, and the image scan runs in a job with no cloud credentials.</li>
+    <li><b>Access:</b> Entra ID role groups mapped to least-privilege scoped roles; the database administrator is a group, not a shared password.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Observability</h2>
+  <ul>
+    <li><b>Central logs:</b> the Azure Monitor Agent ships host and container syslog off-box to Log Analytics.</li>
+    <li><b>Health:</b> a synthetic web test hits <code>/health</code> from multiple regions and raises an availability alert on failure.</li>
+    <li><b>Alerts:</b> metric alerts on web, api and database CPU, on Front Door 5xx and latency, and on database storage, all wired to an email action group.</li>
+    <li><b>Backups watched:</b> a scheduled-query alert fires if a fresh database dump does not land in the blob.</li>
+    <li><b>Cost control:</b> workspace ingestion is capped per environment with 30-day retention.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>One app, three deployment models</h2>
+  <ul>
+    <li><b>VMSS (reference):</b> VM Scale Sets running containers, the deployed and verified primary.</li>
+    <li><b>AKS and Helm:</b> the same app on Kubernetes, with Deployments, HPA, rolling updates and zone spread.</li>
+    <li><b>Azure Container Apps:</b> serverless containers with built-in ingress, revisions and scale-to-zero.</li>
+  </ul>
+  <p class="lead">VMSS is the primary because it maps directly to starting, stopping and scaling nodes and keeps the moving parts small. The alternatives show the same architecture on other platforms.</p>
+</section>
+
+</body>
+</html>
