@@ -4,6 +4,7 @@ resource "azurerm_log_analytics_workspace" "main" {
   location            = var.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
+  daily_quota_gb      = var.daily_quota_gb
   tags                = var.tags
 }
 
@@ -38,7 +39,7 @@ resource "azurerm_monitor_data_collection_rule" "syslog" {
       name           = "syslog"
       streams        = ["Microsoft-Syslog"]
       facility_names = ["daemon", "user", "syslog", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"]
-      log_levels     = ["Info", "Notice", "Warning", "Error", "Critical", "Alert", "Emergency"]
+      log_levels     = var.syslog_log_levels
     }
   }
 }

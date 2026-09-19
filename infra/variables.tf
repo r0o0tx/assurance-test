@@ -93,3 +93,9 @@ variable "purge_protection_enabled" {
   default     = false
   description = "Enable Key Vault purge protection. Set true in prod/staging; false in dev for easy teardown."
 }
+
+variable "log_daily_quota_gb" {
+  type        = number
+  default     = -1
+  description = "Log Analytics daily ingestion cap in GB (-1 = uncapped). Set per environment to bound monitoring cost; lower tiers use a tighter cap."
+}

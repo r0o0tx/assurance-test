@@ -60,3 +60,15 @@ variable "alert_email" {
   description = "Destination for operational alerts. Empty disables the action group and all alert rules."
   default     = ""
 }
+
+variable "daily_quota_gb" {
+  type        = number
+  description = "Daily ingestion cap for the workspace, in GB. -1 leaves ingestion uncapped; a positive value bounds cost by stopping collection for the rest of the day once the cap is hit (alerts keep evaluating already-ingested data)."
+  default     = -1
+}
+
+variable "syslog_log_levels" {
+  type        = list(string)
+  description = "Syslog severities collected into the workspace. Defaults to Warning and above to keep ingestion cheap; prepend \"Info\" and \"Notice\" for verbose application logs."
+  default     = ["Warning", "Error", "Critical", "Alert", "Emergency"]
+}

@@ -134,6 +134,7 @@ module "observability" {
   key_vault_id            = module.security.key_vault_id
   acr_id                  = module.registry.acr_id
   alert_email             = var.alert_email
+  daily_quota_gb          = var.log_daily_quota_gb
 }
 
 module "backup" {
