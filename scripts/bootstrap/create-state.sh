@@ -13,7 +13,7 @@ SA="${PREFIX}${SUFFIX}"
 CONTAINER="tfstate"
 
 az group create --name "$RG" --location "$LOCATION" \
-  --tags app=assurance-test "env=${ENVIRONMENT}" managed-by=bootstrap owner=shubham
+  --tags app=assurance-test "env=${ENVIRONMENT}" managed-by=bootstrap owner=platform-team
 
 az storage account create --name "$SA" --resource-group "$RG" \
   --location "$LOCATION" --sku Standard_LRS --kind StorageV2 \
