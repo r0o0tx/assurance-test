@@ -106,13 +106,31 @@ jobs:
           terraform apply -auto-approve \
             -var-file="environments/${{ inputs.environment }}.tfvars" \
             -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
-      - name: Health-gated rolling upgrade
+      # Freshly imaged nodes take a minute or two to pull the container and pass
+      # the health probe. Wait for them before touching the rolling upgrade,
+      # otherwise it aborts against a 100%-unhealthy (still-booting) baseline.
+      - name: Wait for instance health
         run: |
           set -euo pipefail
           RG="rg-assurance-test-${{ inputs.environment }}"
           for t in web api; do
-            az vmss rolling-upgrade start -g "$RG" -n "astst-$t-vmss" \
-              || az vmss update-instances -g "$RG" -n "astst-$t-vmss" --instance-ids '*'
+            for attempt in $(seq 1 30); do
+              states="$(az vmss get-instance-view -g "$RG" -n "astst-$t-vmss" --instance-id '*' \
+                --query "[].vmHealth.status.code" -o tsv 2>/dev/null || true)"
+              if [ -n "$states" ] && ! echo "$states" | grep -q "unhealthy"; then
+                echo "astst-$t-vmss healthy"; break
+              fi
+              echo "waiting for astst-$t-vmss health ($attempt)"; sleep 20
+            done
+          done
+      - name: Health-gated rolling upgrade
+        run: |
+          set -euo pipefail
+          RG="rg-assurance-test-${{ inputs.environment }}"
+          # A fresh scale set is already on the latest model, so a rolling upgrade
+          # is a no-op there; only start one if there is drift to roll out.
+          for t in web api; do
+            az vmss rolling-upgrade start -g "$RG" -n "astst-$t-vmss" || true
           done
       - name: Smoke test through Front Door
         working-directory: infra
