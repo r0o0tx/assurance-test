@@ -18,10 +18,16 @@ data "azurerm_resource_group" "main" {
 data "azurerm_client_config" "current" {}
 
 # Short random suffix for globally-unique names (storage, acr, front door, db).
+# The keeper lets us force a fresh suffix when a prior name is stuck in a
+# soft-deleted, purge-protected state and cannot be reused until it expires.
 resource "random_string" "suffix" {
   length  = 6
   upper   = false
   special = false
+
+  keepers = {
+    generation = "2"
+  }
 }
 
 locals {
