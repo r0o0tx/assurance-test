@@ -73,10 +73,26 @@ jobs:
         run: |
           set -euo pipefail
           SHA="${{ inputs.sha }}"; SHA="${SHA:0:12}"
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
           export TF_VAR_deployer_ip_rules="[\"$RUNNER_IP\"]"
           terraform apply -auto-approve \
             -var-file="environments/${{ inputs.environment }}.tfvars" \
             -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
+      # Build and push the tier images to the registry the apply just created.
+      # Doing it here (rather than in ci) lets the pipeline stand an environment
+      # up from nothing: the registry exists by the time we push, and the
+      # rolling upgrade below re-images the nodes onto the freshly pushed tags.
+      - name: Build and push images
+        working-directory: infra
+        run: |
+          set -euo pipefail
+          ACR_NAME="$(terraform output -raw acr_name)"
+          ACR="$(terraform output -raw acr_login_server)"
+          az acr login --name "$ACR_NAME"
+          for t in web api; do
+            docker build -t "$ACR/$t:$SHA" "../app/$t"
+            docker push "$ACR/$t:$SHA"
+          done
       - name: Health-gated rolling upgrade
         run: |
           set -euo pipefail

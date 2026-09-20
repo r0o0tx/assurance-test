@@ -6,7 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-# Least privilege at the workflow root; only the build job opts into OIDC.
+# Least privilege: ci builds and scans only. Image push happens in the deploy
+# workflow, after it has created (or confirmed) the registry, so the pipeline
+# can bootstrap an environment from nothing.
 permissions:
   contents: read
 
@@ -34,39 +36,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build tier images
         run: |
           set -euo pipefail
           SHA="${GITHUB_SHA::12}"
-          echo "SHA=$SHA" >> "$GITHUB_ENV"
           for t in web api; do docker build -t "$t:$SHA" "app/$t"; done
           docker save "api:$SHA" -o api-image.tar
-      # Hand the built image to a separate, tokenless job for scanning so a
-      # compromised scanner action can never reach this job's OIDC credential.
+      # Hand the built image to the tokenless scan job.
       - name: Stage image for scan
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: api-image
           path: api-image.tar
           retention-days: 1
-      - uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Push images
-        run: |
-          set -euo pipefail
-          ACR_NAME=$(az acr list -g "${{ vars.STATE_RG }}" --query "[?starts_with(name,'aststacr')].name | [0]" -o tsv)
-          ACR="$ACR_NAME.azurecr.io"
-          az acr login --name "$ACR_NAME"
-          for t in web api; do
-            docker tag "$t:$SHA" "$ACR/$t:$SHA"
-            docker push "$ACR/$t:$SHA"
-          done
 
   scan:
     needs: build
