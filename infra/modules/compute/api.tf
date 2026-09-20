@@ -49,7 +49,9 @@ resource "azurerm_private_link_service" "api" {
   location            = var.location
   tags                = var.tags
 
-  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
+  # Visible to all subscriptions so Front Door's managed subscription can create
+  # the origin private endpoint; the connection is approved at deploy time.
+  visibility_subscription_ids                 = ["*"]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.api_internal.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {

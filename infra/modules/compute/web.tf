@@ -24,7 +24,10 @@ resource "azurerm_private_link_service" "web" {
   location            = var.location
   tags                = var.tags
 
-  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
+  # Front Door creates its origin private endpoint from a Microsoft-managed
+  # subscription, so the service must be visible to all subscriptions. The
+  # pending connection is still gated by the approval step at deploy time.
+  visibility_subscription_ids                 = ["*"]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.web.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {
