@@ -97,15 +97,25 @@ jobs:
           docker build -t "$ACR/backup:latest" "../scripts/backup"
           docker push "$ACR/backup:latest"
       # Phase 2: full apply. Every image now exists, so the nodes boot healthy
-      # and the backup container group creates cleanly.
+      # and the backup container group creates cleanly. Retried because a freshly
+      # created Front Door profile registers its metric definitions with a short
+      # delay, so a metric alert can transiently fail to validate on the first
+      # pass; apply is idempotent, so a later attempt reconciles cleanly.
       - name: Terraform apply (${{ inputs.environment }})
         working-directory: infra
         run: |
           set -euo pipefail
           export TF_VAR_deployer_ip_rules="[\"$RUNNER_IP\"]"
-          terraform apply -auto-approve \
-            -var-file="environments/${{ inputs.environment }}.tfvars" \
-            -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
+          for attempt in $(seq 1 3); do
+            if terraform apply -auto-approve \
+              -var-file="environments/${{ inputs.environment }}.tfvars" \
+              -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"; then
+              exit 0
+            fi
+            echo "apply attempt $attempt failed; waiting for eventual consistency, retrying in 120s"
+            sleep 120
+          done
+          exit 1
       # Front Door reaches the origins over Private Link. The pending private
       # endpoint connection on each service must be approved before traffic flows.
       - name: Approve Front Door private link connections
