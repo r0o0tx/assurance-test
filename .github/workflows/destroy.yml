@@ -67,14 +67,25 @@ jobs:
           [ -n "$KV" ]  && az keyvault network-rule add --name "$KV" --ip-address "$RUNNER_IP" >/dev/null || true
           [ -n "$BKP" ] && az storage account network-rule add --account-name "$BKP" --ip-address "$RUNNER_IP" >/dev/null || true
           sleep 30
+      # Retried because a Private Link Service cannot be deleted while it still
+      # lists the private endpoint connections from Front Door. Destroying the
+      # Front Door profile removes them, but that clears on the service side with
+      # a short delay, so a later idempotent pass deletes the service cleanly.
       - name: Terraform destroy (${{ inputs.environment }})
         working-directory: infra
         run: |
           set -euo pipefail
           export TF_VAR_deployer_ip_rules="[\"$RUNNER_IP\"]"
-          terraform destroy -auto-approve \
-            -var-file="environments/${{ inputs.environment }}.tfvars" \
-            -var "web_image_tag=teardown" -var "api_image_tag=teardown"
+          for attempt in $(seq 1 3); do
+            if terraform destroy -auto-approve \
+              -var-file="environments/${{ inputs.environment }}.tfvars" \
+              -var "web_image_tag=teardown" -var "api_image_tag=teardown"; then
+              exit 0
+            fi
+            echo "destroy attempt $attempt failed (private endpoint connections may still be clearing); retrying in 120s"
+            sleep 120
+          done
+          exit 1
       - name: Close firewall (state)
         if: always()
         run: |
