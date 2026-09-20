@@ -59,7 +59,10 @@ resource "azurerm_cdn_frontdoor_origin" "web" {
   https_port                     = 443
   priority                       = 1
   weight                         = 1000
-  certificate_name_check_enabled = false
+  # Private Link origins require certificate name check enabled at the provider
+  # level. Traffic still flows over HTTP (routes use HttpOnly forwarding), so
+  # this only satisfies the validation and does not change connectivity.
+  certificate_name_check_enabled = true
 
   private_link {
     request_message        = "front door origin access"
@@ -78,7 +81,10 @@ resource "azurerm_cdn_frontdoor_origin" "api" {
   https_port                     = 443
   priority                       = 1
   weight                         = 1000
-  certificate_name_check_enabled = false
+  # Private Link origins require certificate name check enabled at the provider
+  # level. Traffic still flows over HTTP (routes use HttpOnly forwarding), so
+  # this only satisfies the validation and does not change connectivity.
+  certificate_name_check_enabled = true
 
   private_link {
     request_message        = "front door origin access"

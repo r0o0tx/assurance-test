@@ -1,7 +1,7 @@
 # Ship control-plane logs + metrics from every managed service to the workspace.
 
 resource "azurerm_monitor_diagnostic_setting" "frontdoor" {
-  name                       = "diag"
+  name                       = "fd-diag"
   target_resource_id         = var.frontdoor_profile_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 
