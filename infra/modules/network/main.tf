@@ -67,6 +67,48 @@ resource "azurerm_subnet" "jobs" {
 }
 
 # ---------------------------------------------------------------------------
+# Outbound egress for the workload subnets. With private-link origins the tier
+# load balancers are internal only, so the instances have no load-balancer
+# outbound path and being in a Standard load balancer pool disables Azure's
+# default outbound. A NAT gateway gives the instances controlled, dedicated
+# egress from a single known IP, which they need at boot to pull the container
+# image and install the runtime.
+# ---------------------------------------------------------------------------
+resource "azurerm_public_ip" "nat" {
+  name                = "${var.short_prefix}-nat-pip"
+  resource_group_name = var.rg
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
+  tags                = var.tags
+}
+
+resource "azurerm_nat_gateway" "main" {
+  name                    = "${var.short_prefix}-nat"
+  resource_group_name     = var.rg
+  location                = var.location
+  sku_name                = "Standard"
+  idle_timeout_in_minutes = 10
+  tags                    = var.tags
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "main" {
+  nat_gateway_id       = azurerm_nat_gateway.main.id
+  public_ip_address_id = azurerm_public_ip.nat.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "web" {
+  subnet_id      = azurerm_subnet.web.id
+  nat_gateway_id = azurerm_nat_gateway.main.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "api" {
+  subnet_id      = azurerm_subnet.api.id
+  nat_gateway_id = azurerm_nat_gateway.main.id
+}
+
+# ---------------------------------------------------------------------------
 # Web tier NSG: inbound app traffic only from Front Door edge; deny direct net.
 # ---------------------------------------------------------------------------
 resource "azurerm_network_security_group" "web" {

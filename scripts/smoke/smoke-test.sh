@@ -4,9 +4,10 @@
 set -euo pipefail
 
 FD="${1:?usage: smoke-test.sh <frontdoor-hostname>}"
-# Generous budget: a Front Door SKU change recreates the endpoint, and a fresh
-# endpoint can take several minutes to serve at the edge (early requests 404).
-RETRY=(--retry 40 --retry-delay 15 --retry-all-errors --retry-connrefused)
+# Generous budget: a fresh Front Door endpoint, and especially private-link
+# origins whose connection was just approved, can take several minutes to serve
+# at the edge (early requests 404 or 504). Exits early once healthy.
+RETRY=(--retry 60 --retry-delay 15 --retry-all-errors --retry-connrefused)
 
 fail() {
   echo "SMOKE FAIL: $1"
