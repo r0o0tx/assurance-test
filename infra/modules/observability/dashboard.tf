@@ -99,6 +99,9 @@ resource "azurerm_monitor_metric_alert" "fd_latency" {
   frequency           = "PT1M"
   window_size         = "PT5M"
   tags                = var.tags
+  # A freshly created Front Door profile can take a few minutes to register its
+  # metric definitions; skip create-time validation so the alert applies cleanly.
+  skip_metric_validation = true
 
   criteria {
     metric_namespace = "Microsoft.Cdn/profiles"

@@ -1,5 +1,8 @@
+# The profile name carries the random suffix so a fresh deploy always gets a
+# clean profile. Azure retains orphaned diagnostic settings on a fixed-name CDN
+# profile across delete/recreate, which then collide with a managed setting.
 resource "azurerm_cdn_frontdoor_profile" "main" {
-  name                = "${var.short_prefix}-fd"
+  name                = "${var.short_prefix}-fd-${var.suffix}"
   resource_group_name = var.rg
   sku_name            = "Premium_AzureFrontDoor"
   tags                = var.tags
