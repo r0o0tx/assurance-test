@@ -11,6 +11,10 @@ resource "azurerm_kubernetes_cluster" "main" {
   dns_prefix          = "${var.prefix}aks"
   tags                = local.tags
 
+  # Azure enables the OIDC issuer and will not let it be turned back off, so
+  # declare it on to keep apply idempotent.
+  oidc_issuer_enabled = true
+
   default_node_pool {
     name                = "system"
     vm_size             = var.node_vm_size

@@ -3,6 +3,11 @@ resource "helm_release" "app" {
   name  = "assurance-test"
   chart = "${path.module}/chart"
 
+  # Skip fetching the cluster's full OpenAPI schema for client-side validation;
+  # the manifests are plain Deployments and Services, and the schema download is
+  # unreliable over some networks.
+  disable_openapi_validation = true
+
   set {
     name  = "registry"
     value = data.azurerm_container_registry.shared.login_server

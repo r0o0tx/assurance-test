@@ -92,6 +92,11 @@ resource "azurerm_container_app" "api" {
         name        = "DBPASS"
         secret_name = "dbpass"
       }
+      # Flexible Server requires TLS by default; the api enables SSL when set.
+      env {
+        name  = "DBSSL"
+        value = "require"
+      }
     }
 
     http_scale_rule {

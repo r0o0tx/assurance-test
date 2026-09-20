@@ -9,6 +9,8 @@ stringData:
   DBPASS: {{ .Values.db.password | quote }}
   DBHOST: {{ .Values.db.host | quote }}
   DBPORT: {{ .Values.db.port | quote }}
+  # Flexible Server requires TLS by default; the api enables SSL when this is set.
+  DBSSL: "require"
 ---
 apiVersion: apps/v1
 kind: Deployment

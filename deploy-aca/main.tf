@@ -22,12 +22,21 @@ resource "azurerm_virtual_network" "main" {
   tags                = local.tags
 }
 
-# Container Apps environment requires a dedicated infrastructure subnet (min /23).
+# Container Apps environment requires a dedicated infrastructure subnet (min /23)
+# delegated to the Container Apps service.
 resource "azurerm_subnet" "infra" {
   name                 = "snet-aca"
   resource_group_name  = azurerm_resource_group.aca.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.60.0.0/23"]
+
+  delegation {
+    name = "aca"
+    service_delegation {
+      name    = "Microsoft.App/environments"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
 }
 
 resource "azurerm_subnet" "db" {
