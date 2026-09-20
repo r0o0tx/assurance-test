@@ -105,3 +105,22 @@ variable "rbac_enabled" {
   default     = false
   description = "Provision the Entra role groups, scoped custom roles, and the database Entra admin. Off by default: enabling it requires the deploying identity to hold Microsoft Graph Group.ReadWrite.All (admin-consented), so it is typically applied locally under an Entra directory admin."
 }
+
+variable "bastion_enabled" {
+  type        = bool
+  default     = false
+  description = "Deploy a Developer SKU Bastion for break-glass SSH to the private nodes. Free, no public IP. Enabled in prod/staging."
+}
+
+variable "tailscale_enabled" {
+  type        = bool
+  default     = false
+  description = "Deploy the Tailscale subnet-router VM. Showcase only: off by default and never a primary access path."
+}
+
+variable "tailscale_auth_key" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Tailscale auth key for the showcase subnet router; source from Key Vault or a CI secret, never commit."
+}

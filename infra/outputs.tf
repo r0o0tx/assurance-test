@@ -56,3 +56,8 @@ output "rbac_group_names" {
   description = "Role slug -> Entra group display name (empty unless rbac_enabled)."
   value       = var.rbac_enabled ? module.rbac[0].group_names : {}
 }
+
+output "bastion_id" {
+  description = "Developer Bastion resource id (null unless bastion_enabled)."
+  value       = module.access.bastion_id
+}

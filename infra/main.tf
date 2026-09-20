@@ -7,7 +7,7 @@ locals {
     app        = var.name_prefix
     env        = var.environment
     managed-by = "terraform"
-    owner      = "shubham"
+    owner      = "platform-team"
   }
 }
 
@@ -96,6 +96,22 @@ module "rbac" {
   environment    = var.environment
   tenant_id      = data.azurerm_client_config.current.tenant_id
   db_server_name = module.data.db_server_name
+}
+
+# Private access: Developer Bastion (break-glass) + optional Tailscale showcase.
+module "access" {
+  source             = "./modules/access"
+  rg                 = local.rg
+  location           = local.location
+  tags               = local.tags
+  short_prefix       = var.short_prefix
+  vnet_id            = module.network.vnet_id
+  vnet_name          = module.network.vnet_name
+  vnet_cidr          = module.network.vnet_cidr
+  bastion_enabled    = var.bastion_enabled
+  tailscale_enabled  = var.tailscale_enabled
+  tailscale_auth_key = var.tailscale_auth_key
+  ssh_public_key     = var.ssh_public_key
 }
 
 module "compute" {
