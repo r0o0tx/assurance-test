@@ -1,7 +1,17 @@
+locals {
+  rg_name = coalesce(var.resource_group, "rg-assurance-test-${var.environment}-aca")
+  tags = {
+    app        = "assurance-test"
+    env        = var.environment
+    managed-by = "terraform"
+    owner      = "platform-team"
+  }
+}
+
 resource "azurerm_resource_group" "aca" {
-  name     = var.resource_group
+  name     = local.rg_name
   location = var.location
-  tags     = var.tags
+  tags     = local.tags
 }
 
 resource "azurerm_virtual_network" "main" {
@@ -9,7 +19,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.aca.name
   location            = var.location
   address_space       = ["10.60.0.0/16"]
-  tags                = var.tags
+  tags                = local.tags
 }
 
 # Container Apps environment requires a dedicated infrastructure subnet (min /23).
@@ -38,7 +48,7 @@ resource "azurerm_subnet" "db" {
 resource "azurerm_private_dns_zone" "pg" {
   name                = "privatelink.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.aca.name
-  tags                = var.tags
+  tags                = local.tags
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "pg" {
@@ -47,7 +57,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "pg" {
   private_dns_zone_name = azurerm_private_dns_zone.pg.name
   virtual_network_id    = azurerm_virtual_network.main.id
   registration_enabled  = false
-  tags                  = var.tags
+  tags                  = local.tags
 }
 
 resource "azurerm_log_analytics_workspace" "main" {
@@ -56,5 +66,5 @@ resource "azurerm_log_analytics_workspace" "main" {
   location            = var.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
-  tags                = var.tags
+  tags                = local.tags
 }

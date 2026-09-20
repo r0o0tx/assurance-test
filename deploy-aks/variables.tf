@@ -3,9 +3,16 @@ variable "location" {
   default = "eastus"
 }
 
+variable "environment" {
+  type        = string
+  default     = "prod"
+  description = "Environment slug (dev/staging/prod); drives the resource group name and tags."
+}
+
 variable "resource_group" {
-  type    = string
-  default = "rg-assurance-test-aks"
+  type        = string
+  default     = null
+  description = "Override the resource group name; defaults to rg-assurance-test-<env>-aks."
 }
 
 variable "prefix" {
@@ -21,6 +28,17 @@ variable "node_vm_size" {
 variable "node_count" {
   type    = number
   default = 2
+}
+
+variable "db_sku" {
+  type    = string
+  default = "GP_Standard_D2ds_v4"
+}
+
+variable "high_availability_enabled" {
+  type        = bool
+  default     = true
+  description = "Zone-redundant database HA; turn off for a cheaper dev stack."
 }
 
 # Shared container registry that already holds the web/api images.
@@ -44,12 +62,3 @@ variable "api_tag" {
   default = "bootstrap"
 }
 
-variable "tags" {
-  type = map(string)
-  default = {
-    app        = "assurance-test"
-    env        = "aks"
-    managed-by = "terraform"
-    owner      = "shubham"
-  }
-}

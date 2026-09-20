@@ -8,7 +8,7 @@ resource "azurerm_user_assigned_identity" "aca" {
   name                = "${var.prefix}-id"
   resource_group_name = azurerm_resource_group.aca.name
   location            = var.location
-  tags                = var.tags
+  tags                = local.tags
 }
 
 resource "azurerm_role_assignment" "aca_acr" {
@@ -23,7 +23,7 @@ resource "azurerm_container_app_environment" "main" {
   location                   = var.location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   infrastructure_subnet_id   = azurerm_subnet.infra.id
-  tags                       = var.tags
+  tags                       = local.tags
 }
 
 resource "azurerm_container_app" "api" {
@@ -31,7 +31,7 @@ resource "azurerm_container_app" "api" {
   resource_group_name          = azurerm_resource_group.aca.name
   container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
-  tags                         = var.tags
+  tags                         = local.tags
 
   identity {
     type         = "UserAssigned"
@@ -108,7 +108,7 @@ resource "azurerm_container_app" "web" {
   resource_group_name          = azurerm_resource_group.aca.name
   container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
-  tags                         = var.tags
+  tags                         = local.tags
 
   identity {
     type         = "UserAssigned"

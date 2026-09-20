@@ -1,7 +1,17 @@
+locals {
+  rg_name = coalesce(var.resource_group, "rg-assurance-test-${var.environment}-aks")
+  tags = {
+    app        = "assurance-test"
+    env        = var.environment
+    managed-by = "terraform"
+    owner      = "platform-team"
+  }
+}
+
 resource "azurerm_resource_group" "aks" {
-  name     = var.resource_group
+  name     = local.rg_name
   location = var.location
-  tags     = var.tags
+  tags     = local.tags
 }
 
 resource "azurerm_virtual_network" "main" {
@@ -9,7 +19,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.aks.name
   location            = var.location
   address_space       = ["10.50.0.0/16"]
-  tags                = var.tags
+  tags                = local.tags
 }
 
 resource "azurerm_subnet" "aks" {
@@ -37,7 +47,7 @@ resource "azurerm_subnet" "db" {
 resource "azurerm_private_dns_zone" "pg" {
   name                = "privatelink.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.aks.name
-  tags                = var.tags
+  tags                = local.tags
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "pg" {
@@ -46,5 +56,5 @@ resource "azurerm_private_dns_zone_virtual_network_link" "pg" {
   private_dns_zone_name = azurerm_private_dns_zone.pg.name
   virtual_network_id    = azurerm_virtual_network.main.id
   registration_enabled  = false
-  tags                  = var.tags
+  tags                  = local.tags
 }

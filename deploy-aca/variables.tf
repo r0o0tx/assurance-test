@@ -3,14 +3,32 @@ variable "location" {
   default = "eastus"
 }
 
+variable "environment" {
+  type        = string
+  default     = "prod"
+  description = "Environment slug (dev/staging/prod); drives the resource group name and tags."
+}
+
 variable "resource_group" {
-  type    = string
-  default = "rg-assurance-test-aca"
+  type        = string
+  default     = null
+  description = "Override the resource group name; defaults to rg-assurance-test-<env>-aca."
 }
 
 variable "prefix" {
   type    = string
   default = "asttc"
+}
+
+variable "db_sku" {
+  type    = string
+  default = "GP_Standard_D2ds_v4"
+}
+
+variable "high_availability_enabled" {
+  type        = bool
+  default     = true
+  description = "Zone-redundant database HA; turn off for a cheaper dev stack."
 }
 
 variable "acr_name" {
@@ -33,12 +51,3 @@ variable "api_tag" {
   default = "bootstrap"
 }
 
-variable "tags" {
-  type = map(string)
-  default = {
-    app        = "assurance-test"
-    env        = "aca"
-    managed-by = "terraform"
-    owner      = "shubham"
-  }
-}

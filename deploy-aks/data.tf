@@ -13,7 +13,7 @@ resource "azurerm_postgresql_flexible_server" "db" {
   administrator_login    = "appadmin"
   administrator_password = random_password.db.result
 
-  sku_name   = "GP_Standard_D2ds_v4"
+  sku_name   = var.db_sku
   storage_mb = 32768
   zone       = "1"
 
@@ -22,14 +22,17 @@ resource "azurerm_postgresql_flexible_server" "db" {
 
   public_network_access_enabled = false
 
-  high_availability {
-    mode                      = "ZoneRedundant"
-    standby_availability_zone = "2"
+  dynamic "high_availability" {
+    for_each = var.high_availability_enabled ? [1] : []
+    content {
+      mode                      = "ZoneRedundant"
+      standby_availability_zone = "2"
+    }
   }
 
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
-  tags                         = var.tags
+  tags                         = local.tags
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.pg]
 }
