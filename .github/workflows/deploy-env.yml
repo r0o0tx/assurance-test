@@ -68,20 +68,21 @@ jobs:
           [ -n "$BKP" ] && az storage account network-rule add --account-name "$BKP" --ip-address "$RUNNER_IP" >/dev/null || true
           # Let the key vault / backup rules propagate before apply reads secrets.
           sleep 30
-      - name: Terraform apply (${{ inputs.environment }})
+      # Phase 1: create just the registry (and its dependencies). The backup
+      # container group fails to create if its image is missing, so every image
+      # must exist before the full apply runs.
+      - name: Terraform apply (registry bootstrap)
         working-directory: infra
         run: |
           set -euo pipefail
           SHA="${{ inputs.sha }}"; SHA="${SHA:0:12}"
           echo "SHA=$SHA" >> "$GITHUB_ENV"
           export TF_VAR_deployer_ip_rules="[\"$RUNNER_IP\"]"
-          terraform apply -auto-approve \
+          terraform apply -auto-approve -target=module.registry \
             -var-file="environments/${{ inputs.environment }}.tfvars" \
             -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
-      # Build and push the tier images to the registry the apply just created.
-      # Doing it here (rather than in ci) lets the pipeline stand an environment
-      # up from nothing: the registry exists by the time we push, and the
-      # rolling upgrade below re-images the nodes onto the freshly pushed tags.
+      # Build and push all three images to the freshly created registry. Doing it
+      # here lets the pipeline stand an environment up from nothing.
       - name: Build and push images
         working-directory: infra
         run: |
@@ -93,6 +94,18 @@ jobs:
             docker build -t "$ACR/$t:$SHA" "../app/$t"
             docker push "$ACR/$t:$SHA"
           done
+          docker build -t "$ACR/backup:latest" "../scripts/backup"
+          docker push "$ACR/backup:latest"
+      # Phase 2: full apply. Every image now exists, so the nodes boot healthy
+      # and the backup container group creates cleanly.
+      - name: Terraform apply (${{ inputs.environment }})
+        working-directory: infra
+        run: |
+          set -euo pipefail
+          export TF_VAR_deployer_ip_rules="[\"$RUNNER_IP\"]"
+          terraform apply -auto-approve \
+            -var-file="environments/${{ inputs.environment }}.tfvars" \
+            -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"
       - name: Health-gated rolling upgrade
         run: |
           set -euo pipefail

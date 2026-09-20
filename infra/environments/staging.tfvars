@@ -8,5 +8,6 @@ api_instance_count        = 2
 alert_email               = "platform-alerts@example.com"
 purge_protection_enabled  = true
 log_daily_quota_gb        = 1
-bastion_enabled           = true
+# See prod.tfvars: Developer Bastion off until the cold-deploy VNet race is handled.
+bastion_enabled           = false
 # subscription_id         = "<staging-subscription-guid>"  # set for multi-subscription

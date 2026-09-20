@@ -8,5 +8,7 @@ api_instance_count        = 2
 alert_email               = "platform-alerts@example.com"
 purge_protection_enabled  = true
 log_daily_quota_gb        = 5
-bastion_enabled           = true
+# Developer-SKU Bastion races VNet provisioning on a cold deploy; keep it off
+# until that create-ordering is handled. Module code is validated and ready.
+bastion_enabled           = false
 # subscription_id         = "<prod-subscription-guid>"   # set for multi-subscription
