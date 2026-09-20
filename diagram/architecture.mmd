@@ -1,37 +1,45 @@
 flowchart TB
   client([Internet clients])
 
-  subgraph EDGE[Azure Front Door - global edge]
-    fd["CDN cache - WAF - geo-routing - TLS<br/>routes: /* to web, /api/* to api"]
+  subgraph EDGE[Azure Front Door - global edge - Premium]
+    fd["CDN cache - managed WAF - geo-routing - TLS<br/>routes: /* to web, /api/* to api"]
   end
 
   client --> fd
 
-  subgraph RG[Resource group rg-assurance-test-prod - single region, 2 availability zones]
+  subgraph RG[Resource group rg-assurance-test-prod - single region, 3 availability zones]
     direction TB
 
-    subgraph PUB[Public subnets]
-      weblb["Web Load Balancer<br/>Standard, public frontend"]
-      apilb["API Load Balancer<br/>public + private frontends"]
-      webvmss["VMSS web<br/>2 AZs - autoscale - rolling upgrade - health /health"]
-      apivmss["VMSS api<br/>2 AZs - autoscale - rolling upgrade - health /health"]
+    subgraph PLS[Private Link - no public origin]
+      webpls["web Private Link Service"]
+      apipls["api Private Link Service"]
+    end
+
+    subgraph WORK[Workload subnets - internal only]
+      weblb["web internal Load Balancer"]
+      apilb["api internal Load Balancer"]
+      webvmss["VMSS web<br/>3 AZs - autoscale - rolling upgrade - health /health"]
+      apivmss["VMSS api<br/>3 AZs - autoscale - rolling upgrade - health /health"]
+      nat["NAT gateway<br/>single-IP outbound egress"]
     end
 
     subgraph PRIV[Private subnet - no internet route]
-      db[("PostgreSQL Flexible Server<br/>zone-redundant HA - daily backups - no public IP")]
+      db[("PostgreSQL Flexible Server<br/>zone-redundant HA - daily backups - no public IP - TLS only")]
     end
 
-    kv["Key Vault + Managed Identity<br/>DB secrets injected at boot"]
-    acr["Container Registry<br/>SHA-tagged web/api images"]
+    kv["Key Vault + Managed Identity<br/>default-deny - DB secrets injected at boot"]
+    acr["Container Registry - Premium<br/>SHA-tagged web/api images"]
     law["Log Analytics + Azure Monitor<br/>logs off-host - metrics - dashboard - alerts"]
     bkp["Backup runner (ACI, in-VNet)<br/>daily pg_dump to versioned blob"]
   end
 
-  fd -->|"/*"| weblb --> webvmss
-  fd -->|"/api/*"| apilb --> apivmss
-  webvmss -->|"API_HOST via private LB"| apilb
+  fd -->|"/* via Private Link"| webpls --> weblb --> webvmss
+  fd -->|"/api/* via Private Link"| apipls --> apilb --> apivmss
+  webvmss -->|"API_HOST via internal LB"| apilb
   apivmss --> db
 
+  webvmss -. egress .-> nat
+  apivmss -. egress .-> nat
   acr -. image pull .-> webvmss
   acr -. image pull .-> apivmss
   kv -. secrets .-> apivmss
@@ -43,6 +51,8 @@ flowchart TB
   classDef tier fill:#e6f0ff,stroke:#3366cc,color:#111;
   classDef data fill:#fff0e6,stroke:#cc6600,color:#111;
   classDef edge fill:#eaffea,stroke:#2e8b57,color:#111;
+  classDef pl fill:#f3e6ff,stroke:#7a3fbf,color:#111;
   class weblb,apilb,webvmss,apivmss tier;
   class db data;
   class fd edge;
+  class webpls,apipls pl;

@@ -56,14 +56,15 @@
 <section class="slide arch">
   <h2>Architecture</h2>
   <div class="canvas"><img src="architecture.png" alt="architecture diagram"></div>
-  <div class="caption">Azure Front Door to VMSS web and api across two zones, to a private zone-redundant PostgreSQL.</div>
+  <div class="caption">Azure Front Door reaches VMSS web and api privately over Private Link across three zones, to a private zone-redundant PostgreSQL.</div>
 </section>
 
 <section class="slide">
   <h2>How each requirement is met</h2>
   <table>
     <tr><th>Requirement</th><th>Implementation</th></tr>
-    <tr><td class="req">Web and API on the Internet</td><td>Front Door routes <code>/*</code> and <code>/api/*</code> to per-tier VMSS behind load balancers</td></tr>
+    <tr><td class="req">Web and API on the Internet</td><td>Front Door routes <code>/*</code> and <code>/api/*</code> to per-tier VMSS behind internal load balancers, reached privately over Private Link</td></tr>
+    <tr><td class="req">Origins never public</td><td>Internal load balancers exposed to Front Door only through a Private Link Service; instances have no public IP; a NAT gateway provides outbound egress</td></tr>
     <tr><td class="req">Database not public</td><td>PostgreSQL Flexible Server, private VNet access, NSG-restricted, no public IP</td></tr>
     <tr><td class="req">Fully IaC</td><td>Terraform, remote state with locking, one resource group, three environments</td></tr>
     <tr><td class="req">Survive instance failure</td><td>VMSS across two zones, health probes, auto-repair; zone-redundant database HA</td></tr>
@@ -90,7 +91,8 @@
 <section class="slide">
   <h2>Security posture</h2>
   <ul>
-    <li><b>Edge:</b> Premium Front Door with the managed OWASP ruleset and bot-manager rules in blocking mode; origins only accept traffic from Front Door.</li>
+    <li><b>Edge:</b> Premium Front Door with the managed OWASP ruleset and bot-manager rules in blocking mode.</li>
+    <li><b>Private origins:</b> the tiers sit behind internal load balancers exposed to Front Door only through a Private Link Service, so no origin is reachable from the public internet; a NAT gateway gives the instances controlled egress.</li>
     <li><b>Data planes locked:</b> Key Vault, the backup storage account and the Terraform state account default-deny public access and are reachable only from the app subnets and the CI runner.</li>
     <li><b>Secrets and transport:</b> secrets come from Key Vault via managed identity, never from disk or git; the database connection is TLS-only.</li>
     <li><b>Supply chain:</b> keyless OIDC deploys, workflow actions pinned to commit digests, and the image scan runs in a job with no cloud credentials.</li>

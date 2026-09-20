@@ -38,7 +38,7 @@ resource "azurerm_storage_container" "backups" {
   container_access_type = "private"
 }
 
-# The backup job identity can write blobs — scoped to the backups container, not
+# The backup job identity can write blobs, scoped to the backups container, not
 # the whole account (least privilege).
 resource "azurerm_role_assignment" "backup_writer" {
   scope                = azurerm_storage_container.backups.resource_manager_id

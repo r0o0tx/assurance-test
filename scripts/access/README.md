@@ -2,7 +2,7 @@
 
 Thin wrappers for reaching the running platform. They resolve resource names by
 convention (prefix + environment) and query Azure directly, so you only need
-`az login` and the RBAC your role grants — no Terraform state access.
+`az login` and the RBAC your role grants, with no Terraform state access.
 
 Set the target environment with `ENV` (default `prod`):
 
@@ -26,6 +26,6 @@ Notes:
 - Everything except `connect-vm.sh` and `db-connect.sh` works over the Azure
   management plane and needs no VPN/Bastion.
 - `db-connect.sh` and interactive `connect-vm.sh` need a private path into the
-  VNet — see the Bastion / Tailscale private-access setup.
+  VNet; see the Bastion / Tailscale private-access setup.
 - `backup-exec.sh` mangles `/usr/...` paths under Git Bash on Windows; run it
   from WSL/PowerShell.

@@ -10,6 +10,15 @@ shared registry for images.
 Note on naming: Azure Container Service (ACS) was retired and folded into AKS, so this is
 the modern managed-container alternative alongside the AKS path.
 
+![architecture](architecture.png)
+
+Both apps pull from the shared registry with a user-assigned identity (`AcrPull`), run
+external ingress with managed TLS, autoscale on HTTP concurrency (2-5 replicas), and
+pass `DBSSL=require`. The environment is VNet-integrated (a delegated infrastructure
+subnet) so it reaches the private database. Like the primary stack it is parameterised
+by an `environment` variable (`rg-assurance-test-<env>-aca`, tags, DB SKU / HA toggle),
+and `security.yml` scans this root alongside `infra` and `deploy-aks`.
+
 ## Deploy
 
 ```bash

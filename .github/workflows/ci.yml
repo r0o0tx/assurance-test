@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: "18"
+          cache: npm
+          cache-dependency-path: app/${{ matrix.tier }}/package-lock.json
       - run: npm ci
         working-directory: app/${{ matrix.tier }}
       - run: npm test
@@ -38,11 +40,11 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Build tier images
+      - name: Build the image under scan
         run: |
           set -euo pipefail
           SHA="${GITHUB_SHA::12}"
-          for t in web api; do docker build -t "$t:$SHA" "app/$t"; done
+          docker build -t "api:$SHA" app/api
           docker save "api:$SHA" -o api-image.tar
       # Hand the built image to the tokenless scan job.
       - name: Stage image for scan

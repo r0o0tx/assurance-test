@@ -1,0 +1,31 @@
+flowchart TB
+  client([Internet clients])
+
+  subgraph RG[Resource group rg-assurance-test-ENV-aca - local state]
+    direction TB
+
+    subgraph ENV[Container App Environment - VNet-integrated]
+      webapp["Container App web<br/>external ingress + managed TLS<br/>single-revision - http autoscale 2-5"]
+      apiapp["Container App api<br/>external ingress + managed TLS<br/>single-revision - http autoscale 2-5"]
+    end
+
+    db[("PostgreSQL Flexible Server<br/>private - zone-redundant HA - TLS only")]
+    id["User-assigned identity<br/>AcrPull on shared registry"]
+    law["Log Analytics<br/>environment logs"]
+  end
+
+  acr["Shared Container Registry<br/>(reused from the primary stack)"]
+
+  client --> webapp
+  webapp -->|"API_HOST = api ingress FQDN"| apiapp
+  apiapp --> db
+  acr -. image pull .-> webapp
+  acr -. image pull .-> apiapp
+  id -. auth .-> acr
+  webapp -. logs .-> law
+  apiapp -. logs .-> law
+
+  classDef tier fill:#e6f0ff,stroke:#3366cc,color:#111;
+  classDef data fill:#fff0e6,stroke:#cc6600,color:#111;
+  class webapp,apiapp tier;
+  class db data;

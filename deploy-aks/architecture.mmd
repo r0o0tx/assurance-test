@@ -1,0 +1,30 @@
+flowchart TB
+  client([Internet clients])
+
+  subgraph RG[Resource group rg-assurance-test-ENV-aks - local state]
+    direction TB
+
+    subgraph AKS[AKS cluster - 3 zones - Azure CNI overlay - autoscale 2-4]
+      websvc["Service web-public<br/>Standard LoadBalancer"]
+      webdep["Deployment web<br/>rolling update - HPA - probes"]
+      apisvc["Service api (ClusterIP)<br/>in-cluster east-west"]
+      apidep["Deployment api<br/>rolling update - HPA - probes"]
+    end
+
+    db[("PostgreSQL Flexible Server<br/>private - zone-redundant HA - TLS only")]
+    id["Kubelet managed identity<br/>AcrPull on shared registry"]
+  end
+
+  acr["Shared Container Registry<br/>(reused from the primary stack)"]
+
+  client --> websvc --> webdep
+  webdep -->|"API_HOST"| apisvc --> apidep
+  apidep --> db
+  acr -. image pull .-> webdep
+  acr -. image pull .-> apidep
+  id -. auth .-> acr
+
+  classDef tier fill:#e6f0ff,stroke:#3366cc,color:#111;
+  classDef data fill:#fff0e6,stroke:#cc6600,color:#111;
+  class websvc,webdep,apisvc,apidep tier;
+  class db data;
