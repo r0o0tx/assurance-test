@@ -22,10 +22,18 @@ FILE="/tmp/appdb-${TS}.sql.gz"
 
 export PGPASSWORD="$DBPASS"
 export PGSSLMODE=require
-pg_dump -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d "$DB" | gzip >"$FILE"
+# --no-owner/--no-acl keep the dump portable: it restores into any target
+# without ownership or catalog-grant noise that the restoring role cannot apply.
+pg_dump --no-owner --no-acl -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d "$DB" | gzip >"$FILE"
 
-az storage blob upload \
-  --account-name "$BACKUP_SA" --container-name backups \
-  --name "appdb/${TS}.sql.gz" --file "$FILE" --auth-mode login --overwrite
+# Retry the upload: the managed-identity token endpoint can be briefly
+# unavailable right after a container (re)start, same as the login above.
+for i in 1 2 3 4 5; do
+  az storage blob upload \
+    --account-name "$BACKUP_SA" --container-name backups \
+    --name "appdb/${TS}.sql.gz" --file "$FILE" --auth-mode login --overwrite && break
+  echo "upload attempt $i failed; retrying in 10s"
+  sleep 10
+done
 
 echo "uploaded appdb/${TS}.sql.gz"

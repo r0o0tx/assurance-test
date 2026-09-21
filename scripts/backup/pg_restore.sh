@@ -23,8 +23,12 @@ DBPORT=$(az keyvault secret show --vault-name "$KV_NAME" --name DBPORT --query v
 
 TARGET_DB="${2:-${DB}_restore_verify}"
 
-az storage blob download --account-name "$BACKUP_SA" --container-name backups \
-  --name "$BLOB" --file /tmp/restore.sql.gz --auth-mode login
+for i in 1 2 3 4 5; do
+  az storage blob download --account-name "$BACKUP_SA" --container-name backups \
+    --name "$BLOB" --file /tmp/restore.sql.gz --auth-mode login && break
+  echo "download attempt $i failed; retrying in 10s"
+  sleep 10
+done
 
 export PGPASSWORD="$DBPASS"
 export PGSSLMODE=require
