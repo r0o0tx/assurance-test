@@ -33,13 +33,21 @@ done
 export PGPASSWORD="$DBPASS"
 export PGSSLMODE=require
 
-# Create the target database if it is not already there, so a verification
-# restore lands in a clean, empty database.
-EXISTS=$(psql -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d postgres \
-  -tAc "SELECT 1 FROM pg_database WHERE datname='$TARGET_DB'")
-if [ "$EXISTS" != "1" ]; then
+if [ -z "${2:-}" ]; then
+  # Default verification target: recreate it clean on every run so the drill is
+  # repeatable and a restore always lands in an empty database.
+  psql -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d postgres \
+    -c "DROP DATABASE IF EXISTS \"$TARGET_DB\""
   psql -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d postgres \
     -c "CREATE DATABASE \"$TARGET_DB\""
+else
+  # Explicit target: create only if missing; never drop a caller-named database.
+  EXISTS=$(psql -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d postgres \
+    -tAc "SELECT 1 FROM pg_database WHERE datname='$TARGET_DB'")
+  if [ "$EXISTS" != "1" ]; then
+    psql -h "$DBHOST" -p "${DBPORT:-5432}" -U "$DBUSER" -d postgres \
+      -c "CREATE DATABASE \"$TARGET_DB\""
+  fi
 fi
 
 # ON_ERROR_STOP so a partial or failed restore is a hard failure, not silent.
