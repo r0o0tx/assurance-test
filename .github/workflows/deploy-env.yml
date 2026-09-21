@@ -151,10 +151,16 @@ jobs:
             for attempt in $(seq 1 30); do
               states="$(az vmss get-instance-view -g "$RG" -n "astst-$t-vmss" --instance-id '*' \
                 --query "[].vmHealth.status.code" -o tsv 2>/dev/null || true)"
-              if [ -n "$states" ] && ! echo "$states" | grep -q "unhealthy"; then
-                echo "astst-$t-vmss healthy"; break
+              # Require every reporting instance to be Healthy. The codes are
+              # HealthState/{Healthy,Unhealthy,Unknown}; matching "/healthy$" (case
+              # insensitive) counts Healthy only and never Unhealthy/Unknown, so a
+              # still-booting node cannot slip through as ready.
+              total="$(echo "$states" | grep -c .)"
+              healthy="$(echo "$states" | grep -ciE '/healthy$')"
+              if [ "$total" -gt 0 ] && [ "$healthy" -eq "$total" ]; then
+                echo "astst-$t-vmss healthy ($healthy/$total)"; break
               fi
-              echo "waiting for astst-$t-vmss health ($attempt)"; sleep 20
+              echo "waiting for astst-$t-vmss health ($attempt): ${healthy:-0}/${total:-0} healthy"; sleep 20
             done
           done
       - name: Health-gated rolling upgrade

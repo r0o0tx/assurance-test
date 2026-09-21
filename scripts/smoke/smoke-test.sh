@@ -6,8 +6,9 @@ set -euo pipefail
 FD="${1:?usage: smoke-test.sh <frontdoor-hostname>}"
 # Generous budget: a fresh Front Door endpoint, and especially private-link
 # origins whose connection was just approved, can take several minutes to serve
-# at the edge (early requests 404 or 504). Exits early once healthy.
-RETRY=(--retry 60 --retry-delay 15 --retry-all-errors --retry-connrefused)
+# at the edge (early requests 404 or 504). 90 x 15s ~= 22 min covers a cold
+# private-link warm-up; curl exits early on the first success.
+RETRY=(--retry 90 --retry-delay 15 --retry-all-errors --retry-connrefused)
 
 fail() {
   echo "SMOKE FAIL: $1"
