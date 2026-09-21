@@ -26,7 +26,7 @@ resource "random_string" "suffix" {
   special = false
 
   keepers = {
-    generation = "3"
+    generation = "4"
   }
 }
 
