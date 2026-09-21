@@ -192,6 +192,7 @@ module "backup" {
   identity_client_id    = module.security.identity_client_id
   identity_principal_id = module.security.identity_principal_id
   acr_login_server      = module.registry.login_server
+  image_tag             = var.backup_image_tag
   key_vault_name        = module.security.key_vault_name
   law_workspace_id      = module.observability.law_workspace_guid
   law_workspace_key     = module.observability.law_primary_shared_key

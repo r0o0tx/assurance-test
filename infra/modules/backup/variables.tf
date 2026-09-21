@@ -44,6 +44,12 @@ variable "acr_login_server" {
   type = string
 }
 
+variable "image_tag" {
+  type        = string
+  default     = "latest"
+  description = "Tag of the backup image to run. Set to the build SHA at deploy time so a new image forces the container group to be recreated (a fixed tag would not change the resource, and ACI does not re-pull a moving tag on its own)."
+}
+
 variable "key_vault_name" {
   type = string
 }

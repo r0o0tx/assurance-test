@@ -94,8 +94,8 @@ jobs:
             docker build -t "$ACR/$t:$SHA" "../app/$t"
             docker push "$ACR/$t:$SHA"
           done
-          docker build -t "$ACR/backup:latest" "../scripts/backup"
-          docker push "$ACR/backup:latest"
+          docker build -t "$ACR/backup:$SHA" "../scripts/backup"
+          docker push "$ACR/backup:$SHA"
       # Now the full apply. Every image exists, so the nodes boot healthy
       # and the backup container group creates cleanly. Retried because a freshly
       # created Front Door profile registers its metric definitions with a short
@@ -109,7 +109,7 @@ jobs:
           for attempt in $(seq 1 3); do
             if terraform apply -auto-approve \
               -var-file="environments/${{ inputs.environment }}.tfvars" \
-              -var "web_image_tag=$SHA" -var "api_image_tag=$SHA"; then
+              -var "web_image_tag=$SHA" -var "api_image_tag=$SHA" -var "backup_image_tag=$SHA"; then
               exit 0
             fi
             echo "apply attempt $attempt failed; waiting for eventual consistency, retrying in 120s"

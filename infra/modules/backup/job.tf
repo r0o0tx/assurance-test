@@ -30,7 +30,7 @@ resource "azurerm_container_group" "backup" {
 
   container {
     name     = "backup"
-    image    = "${var.acr_login_server}/backup:latest"
+    image    = "${var.acr_login_server}/backup:${var.image_tag}"
     cpu      = "0.5"
     memory   = "1.0"
     commands = ["/bin/bash", "-c", "while true; do /usr/local/bin/pg_backup.sh || true; sleep 86400; done"]

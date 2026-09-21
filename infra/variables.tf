@@ -45,6 +45,11 @@ variable "api_image_tag" {
   default = "bootstrap"
 }
 
+variable "backup_image_tag" {
+  type    = string
+  default = "latest"
+}
+
 variable "web_instance_count" {
   type    = number
   default = 2

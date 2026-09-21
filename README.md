@@ -68,6 +68,7 @@ scripts/onboarding/      add / remove a user from an Entra role group
 scripts/smoke/           post-deploy smoke test
 .github/workflows/       ci, deploy, deploy-env, security, mirror, destroy
 diagram/                 architecture diagram + slide deck
+docs/                    live deployment + verification runbook
 deploy-aks/              alternative: AKS + Helm
 deploy-aca/              alternative: Azure Container Apps
 ```
@@ -80,8 +81,8 @@ tier images, applies the full stack, approves the Front Door private endpoints, 
 a health-gated rolling upgrade, and smoke-tests through Front Door. Environments are
 selected by the `environment` variable (`infra/environments/<env>.tfvars`).
 
-To provision manually (for example a first bootstrap), see `docs/live-runbook.md`
-outside the repo, or in short:
+To provision manually (for example a first bootstrap), see `docs/live-runbook.md`,
+or in short:
 
 ```bash
 # one-time: resource group + Terraform state storage
